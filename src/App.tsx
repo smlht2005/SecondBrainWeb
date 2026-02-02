@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Box, CssBaseline, ThemeProvider, AppBar, Toolbar, Typography, 
   Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, 
-  Container, Paper, InputBase, IconButton, Chip, Stack, useMediaQuery, useTheme
+  Container, Paper, InputBase, IconButton, Chip, Stack, useMediaQuery, CircularProgress
 } from '@mui/material';
 import { 
   Search as SearchIcon, 
@@ -13,49 +13,113 @@ import {
   MenuBook as BookIcon,
   History as HistoryIcon,
   Menu as MenuIcon,
-  Assessment as AssessmentIcon
+  Assessment as AssessmentIcon,
+  Description as FileIcon
 } from '@mui/icons-material';
 import ReactMarkdown from 'react-markdown';
 import { theme } from './theme/theme';
 
 const drawerWidth = 280;
 
+interface BrainFile {
+    name: string;
+    fileName: string;
+}
+
+interface LogEntry {
+    date: string;
+    fileName: string;
+}
+
 function App() {
-  const muiTheme = useTheme();
-  const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [selectedFile, setSelectedFile] = useState('Coding & Tech');
+  const [selectedFile, setSelectedFile] = useState<BrainFile | null>(null);
+  const [content, setContent] = useState('');
+  const [files, setFiles] = useState<BrainFile[]>([]);
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:3000/api' : '/api';
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [filesRes, logsRes] = await Promise.all([
+          fetch(`${API_BASE}/brain/files`),
+          fetch(`${API_BASE}/memory/logs`)
+        ]);
+        const filesData = await filesRes.json();
+        const logsData = await logsRes.json();
+        setFiles(filesData);
+        setLogs(logsData);
+        if (filesData.length > 0) {
+            handleSelectFile(filesData[0]);
+        }
+      } catch (e) {
+        console.error("Fetch error", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const handleSelectFile = async (file: BrainFile) => {
+    setSelectedFile(file);
+    setContent('讀取中...');
+    if (isMobile) setMobileOpen(false);
+    try {
+        const res = await fetch(`${API_BASE}/brain/content/${file.fileName}`);
+        const data = await res.json();
+        setContent(data.content);
+    } catch (e) {
+        setContent('讀取失敗');
+    }
+  };
+
+  const handleSelectLog = async (log: LogEntry) => {
+    setSelectedFile({ name: `日誌: ${log.date}`, fileName: log.fileName });
+    setContent('讀取中...');
+    if (isMobile) setMobileOpen(false);
+    try {
+        // 日誌存放在另一個目錄，後端需要支援。暫時透過 API 路由處理。
+        const res = await fetch(`${API_BASE}/brain/content/../memory/${log.fileName}`); // 注意：這需要後端路徑安全處理，僅供 MVP 測試
+        const data = await res.json();
+        setContent(data.content);
+    } catch (e) {
+        setContent('讀取失敗');
+    }
+  };
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
 
-  const categories = [
-    { name: 'Coding & Tech', icon: <CodeIcon />, color: '#00e5ff' },
-    { name: 'Cloud & Network', icon: <CloudIcon />, color: '#76ff03' },
-    { name: 'Self Growth', icon: <GrowthIcon />, color: '#ff4081' },
-    { name: 'Investment', icon: <InvestmentIcon />, color: '#ffab00' },
-  ];
+  const getIcon = (name: string) => {
+    if (name.includes('Coding')) return <CodeIcon />;
+    if (name.includes('Cloud')) return <CloudIcon />;
+    if (name.includes('Growth')) return <GrowthIcon />;
+    if (name.includes('Investment')) return <InvestmentIcon />;
+    return <FileIcon />;
+  };
 
   const drawerContent = (
     <Box sx={{ p: 2 }}>
       <Toolbar />
       <Typography variant="overline" sx={{ px: 2, color: 'gray', fontWeight: 700 }}>知識分類</Typography>
       <List>
-        {categories.map((cat) => (
-          <ListItem key={cat.name} disablePadding>
+        {files.map((file) => (
+          <ListItem key={file.fileName} disablePadding>
             <ListItemButton 
-              selected={selectedFile === cat.name}
-              onClick={() => {
-                setSelectedFile(cat.name);
-                if (isMobile) setMobileOpen(false);
-              }}
+              selected={selectedFile?.fileName === file.fileName}
+              onClick={() => handleSelectFile(file)}
               sx={{ borderRadius: 2, mb: 1, '&.Mui-selected': { bgcolor: 'rgba(0, 229, 255, 0.1)' } }}
             >
-              <ListItemIcon sx={{ color: selectedFile === cat.name ? 'primary.main' : 'inherit' }}>
-                {cat.icon}
+              <ListItemIcon sx={{ color: selectedFile?.fileName === file.fileName ? 'primary.main' : 'inherit' }}>
+                {getIcon(file.name)}
               </ListItemIcon>
-              <ListItemText primary={cat.name} />
+              <ListItemText primary={file.name} />
             </ListItemButton>
           </ListItem>
         ))}
@@ -63,11 +127,15 @@ function App() {
       
       <Typography variant="overline" sx={{ px: 2, color: 'gray', mt: 4, display: 'block', fontWeight: 700 }}>最近對話</Typography>
       <List>
-        {['2026-02-02', '2026-02-01'].map((date) => (
-          <ListItem key={date} disablePadding>
-            <ListItemButton sx={{ borderRadius: 2 }}>
+        {logs.map((log) => (
+          <ListItem key={log.fileName} disablePadding>
+            <ListItemButton 
+                selected={selectedFile?.fileName === log.fileName}
+                onClick={() => handleSelectLog(log)}
+                sx={{ borderRadius: 2 }}
+            >
               <ListItemIcon><HistoryIcon fontSize="small" /></ListItemIcon>
-              <ListItemText primary={date} secondary="COBOLFP 專案重構..." secondaryTypographyProps={{ noWrap: true, variant: 'caption' }} />
+              <ListItemText primary={log.date} secondaryTypographyProps={{ noWrap: true, variant: 'caption' }} />
             </ListItemButton>
           </ListItem>
         ))}
@@ -80,7 +148,6 @@ function App() {
       <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
         <CssBaseline />
         
-        {/* Header */}
         <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1, bgcolor: 'background.paper', backgroundImage: 'none' }}>
           <Toolbar sx={{ justifyContent: 'space-between' }}>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -96,15 +163,9 @@ function App() {
             </Box>
             
             <Box sx={{ 
-              position: 'relative', 
-              borderRadius: 2, 
-              bgcolor: 'rgba(255,255,255,0.05)', 
-              ml: { xs: 1, sm: 3 }, 
-              flexGrow: { xs: 1, sm: 0 },
-              width: { xs: 'auto', sm: '300px', md: '400px' }, 
-              display: 'flex', 
-              alignItems: 'center', 
-              px: { xs: 1, sm: 2 } 
+              position: 'relative', borderRadius: 2, bgcolor: 'rgba(255,255,255,0.05)', 
+              ml: { xs: 1, sm: 3 }, flexGrow: { xs: 1, sm: 0 },
+              width: { xs: 'auto', sm: '300px', md: '400px' }, display: 'flex', alignItems: 'center', px: { xs: 1, sm: 2 } 
             }}>
               <SearchIcon sx={{ color: 'gray', mr: 1, fontSize: '1.2rem' }} />
               <InputBase placeholder="搜尋..." sx={{ color: 'white', width: '100%', fontSize: '0.9rem' }} />
@@ -112,104 +173,50 @@ function App() {
           </Toolbar>
         </AppBar>
 
-        {/* Sidebar - Responsive Drawer */}
         <Box component="nav" sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}>
           {isMobile ? (
             <Drawer
-              variant="temporary"
-              open={mobileOpen}
-              onClose={handleDrawerToggle}
+              variant="temporary" open={mobileOpen} onClose={handleDrawerToggle}
               ModalProps={{ keepMounted: true }}
-              sx={{
-                display: { xs: 'block', md: 'none' },
-                '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth, bgcolor: 'background.paper' },
-              }}
+              sx={{ display: { xs: 'block', md: 'none' }, '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth, bgcolor: 'background.paper' } }}
             >
               {drawerContent}
             </Drawer>
           ) : (
             <Drawer
-              variant="permanent"
-              sx={{
-                display: { xs: 'none', md: 'block' },
-                '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth, bgcolor: 'background.paper', borderRight: '1px solid rgba(255,255,255,0.1)' },
-              }}
-              open
+              variant="permanent" open
+              sx={{ display: { xs: 'none', md: 'block' }, '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth, bgcolor: 'background.paper', borderRight: '1px solid rgba(255,255,255,0.1)' } }}
             >
               {drawerContent}
             </Drawer>
           )}
         </Box>
 
-        {/* Main Content */}
         <Box component="main" sx={{ flexGrow: 1, p: { xs: 2, sm: 3 }, width: { xs: '100%', md: `calc(100% - ${drawerWidth}px)` } }}>
           <Toolbar />
           <Container maxWidth="lg" sx={{ px: { xs: 0, sm: 2 } }}>
-            <Stack direction="row" spacing={1} sx={{ mb: 2, overflowX: 'auto', pb: 1, '&::-webkit-scrollbar': { display: 'none' } }}>
-              <Chip label="#Insight" color="primary" variant="outlined" size="small" />
-              <Chip label="#Rule" color="secondary" variant="outlined" size="small" />
-              <Chip label="#HIS" variant="outlined" size="small" />
-              <Chip label="#RWD" variant="outlined" size="small" />
-            </Stack>
-            
-            <Paper sx={{ p: { xs: 2, sm: 4 }, borderRadius: { xs: 2, sm: 3 }, minHeight: '70vh', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>
-              <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, color: 'primary.main', fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>
-                {selectedFile}
-              </Typography>
-              <Box sx={{ mt: 3, color: 'rgba(255,255,255,0.8)', lineHeight: 1.6, fontSize: '0.95rem', '& pre': { overflowX: 'auto', bgcolor: 'rgba(0,0,0,0.2)', p: 2, borderRadius: 1 } }}>
-                <ReactMarkdown>
-                  {`### 🚀 核心開發準則
-                  
-1. **行為驅動識別 (Behavior-based Analysis)**
-   - 不依據「檔案名稱」判斷功能。
-   - 掃描代碼中的關鍵動詞 (\`WRITE\`, \`REWRITE\`, \`DELETE\`)。
-
-2. **定義與使用的雙重校驗**
-   - 僅在 PROCEDURE DIVISION 中被實際使用的畫面才計點。
-   - 自動過濾 Dead Code。
-
-3. **配置外部化 (JSON)**
-   - 使用 \`appsettings.json\` 管理權重。`}
-                </ReactMarkdown>
-              </Box>
-            </Paper>
-
-            {/* Mobile-only Stats Section (appears at bottom of main on mobile) */}
-            {isMobile && (
-              <Box sx={{ mt: 3 }}>
-                <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, display: 'flex', alignItems: 'center' }}>
-                  <AssessmentIcon sx={{ mr: 1 }} /> 知識摘要
-                </Typography>
-                <Stack direction="row" spacing={2}>
-                  <Paper sx={{ p: 2, flex: 1, bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 2 }}>
-                    <Typography variant="caption" color="gray">總功能點數</Typography>
-                    <Typography variant="h5" color="primary.main" sx={{ fontWeight: 700 }}>1,763</Typography>
-                  </Paper>
-                  <Paper sx={{ p: 2, flex: 1, bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 2 }}>
-                    <Typography variant="caption" color="gray">本週新增</Typography>
-                    <Typography variant="h5" sx={{ fontWeight: 700 }}>12</Typography>
-                  </Paper>
+            {loading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}><CircularProgress /></Box>
+            ) : (
+                <>
+                <Stack direction="row" spacing={1} sx={{ mb: 2, overflowX: 'auto', pb: 1 }}>
+                    <Chip label="#Insight" color="primary" variant="outlined" size="small" />
+                    <Chip label="#Rule" color="secondary" variant="outlined" size="small" />
+                    <Chip label="#HIS" variant="outlined" size="small" />
                 </Stack>
-              </Box>
+                
+                <Paper sx={{ p: { xs: 2, sm: 4 }, borderRadius: { xs: 2, sm: 3 }, minHeight: '70vh', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>
+                    <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, color: 'primary.main', fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>
+                    {selectedFile?.name || '請選擇檔案'}
+                    </Typography>
+                    <Box sx={{ mt: 3, color: 'rgba(255,255,255,0.8)', lineHeight: 1.6, '& pre': { overflowX: 'auto', bgcolor: 'rgba(0,0,0,0.2)', p: 2, borderRadius: 1 } }}>
+                    <ReactMarkdown>{content}</ReactMarkdown>
+                    </Box>
+                </Paper>
+                </>
             )}
           </Container>
         </Box>
-
-        {/* Right InfoBar - Hidden on mobile, sticky on desktop */}
-        {!isMobile && (
-          <Box sx={{ width: 300, p: 3, borderLeft: '1px solid rgba(255,255,255,0.1)', position: 'sticky', top: 0, height: '100vh' }}>
-            <Toolbar />
-            <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>知識摘要</Typography>
-            <Paper sx={{ p: 2, mb: 2, bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 2 }}>
-              <Typography variant="caption" color="gray">總功能點數</Typography>
-              <Typography variant="h4" color="primary.main" sx={{ fontWeight: 700 }}>1,763</Typography>
-            </Paper>
-            <Paper sx={{ p: 2, bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 2 }}>
-              <Typography variant="caption" color="gray">本週新增知識點</Typography>
-              <Typography variant="h4" sx={{ fontWeight: 700 }}>12</Typography>
-            </Paper>
-          </Box>
-        )}
       </Box>
     </ThemeProvider>
   );
