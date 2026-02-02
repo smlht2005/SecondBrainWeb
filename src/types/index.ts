@@ -1,14 +1,17 @@
 export interface BrainFile {
-    id: string;
     name: string;
-    category: 'coding' | 'tech' | 'growth' | 'investment' | 'cloud';
-    content: string;
-    lastUpdated: string;
+    fileName: string;
+    type: 'brain';
 }
 
-export interface ConversationLog {
-    id: string;
+export interface LogEntry {
     date: string;
-    summary: string;
-    tags: string[];
+    fileName: string;
+    type: 'memory';
 }
+
+export type SelectedItem = {
+    name: string;
+    fileName: string;
+    type: 'brain' | 'memory';
+};
