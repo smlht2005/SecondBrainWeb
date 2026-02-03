@@ -13,6 +13,12 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+// 全域 Request 日誌，幫助顧問診斷
+app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    next();
+});
+
 // 智慧路徑探測
 const getStorageDir = (dirName: string) => {
     const paths = [
@@ -21,12 +27,8 @@ const getStorageDir = (dirName: string) => {
         path.join(process.cwd(), dirName),
         path.join(process.cwd(), '..', dirName)
     ];
-    console.log(`Checking paths for ${dirName}:`, paths);
     for (const p of paths) {
-        if (fs.existsSync(p)) {
-            console.log(`Found ${dirName} at: ${p}`);
-            return p;
-        }
+        if (fs.existsSync(p)) return p;
     }
     return paths[0];
 };
@@ -34,8 +36,11 @@ const getStorageDir = (dirName: string) => {
 const BRAIN_DIR = getStorageDir('brain');
 const MEMORY_DIR = getStorageDir('memory');
 
-// API: 獲取所有知識分類檔案列表
-app.get('/api/brain/files', (req, res) => {
+// --- API 路由區 (必須在靜態檔案之前) ---
+
+const apiRouter = express.Router();
+
+apiRouter.get('/brain/files', (req, res) => {
     try {
         if (!fs.existsSync(BRAIN_DIR)) return res.json([]);
         const files = fs.readdirSync(BRAIN_DIR)
@@ -51,8 +56,7 @@ app.get('/api/brain/files', (req, res) => {
     }
 });
 
-// API: 獲取對話紀錄列表
-app.get('/api/memory/logs', (req, res) => {
+apiRouter.get('/memory/logs', (req, res) => {
     try {
         if (!fs.existsSync(MEMORY_DIR)) return res.json([]);
         const logs = fs.readdirSync(MEMORY_DIR)
@@ -69,7 +73,7 @@ app.get('/api/memory/logs', (req, res) => {
     }
 });
 
-app.get('/api/content/:type/:fileName', (req, res) => {
+apiRouter.get('/content/:type/:fileName', (req, res) => {
     const { type, fileName } = req.params;
     const baseDir = type === 'memory' ? MEMORY_DIR : BRAIN_DIR;
     try {
@@ -84,7 +88,7 @@ app.get('/api/content/:type/:fileName', (req, res) => {
     }
 });
 
-app.get('/api/debug/paths', (req, res) => {
+apiRouter.get('/debug/paths', (req, res) => {
     res.json({
         cwd: process.cwd(),
         __dirname,
@@ -96,8 +100,10 @@ app.get('/api/debug/paths', (req, res) => {
     });
 });
 
-// 靜態檔案服務邏輯修正
-// Vite 預設打包到 dist，server 也在根目錄或 server 目錄
+app.use('/api', apiRouter);
+
+// --- 靜態檔案區 ---
+
 const possibleDistPaths = [
     path.resolve(__dirname, '../dist'),
     path.resolve(__dirname, 'dist'),
@@ -115,15 +121,14 @@ for (const p of possibleDistPaths) {
 if (distPath) {
     console.log(`Serving static files from: ${distPath}`);
     app.use(express.static(distPath));
-    // 讓 React Router 運作，且不干擾 API
-    app.get('*', (req, res, next) => {
-        if (req.path.startsWith('/api')) return next();
+    // 處理 SPA 路由：除了 API 以外的所有請求都導向 index.html
+    app.get('*', (req, res) => {
         res.sendFile(path.join(distPath, 'index.html'));
     });
 } else {
-    console.log("Static files (dist) not found. Running in API-only mode?");
+    console.log("Static files (dist) not found. API mode only.");
 }
 
 app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
+    console.log(`Server started on port ${port}`);
 });
