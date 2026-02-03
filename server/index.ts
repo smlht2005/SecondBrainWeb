@@ -13,31 +13,28 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// 智慧路徑探測：優先尋找容器根目錄下的共享空間，若無則回退至相對路徑
+// 智慧路徑探測
 const getStorageDir = (dirName: string) => {
     const paths = [
-        path.join('/home/node/.openclaw/workspace', dirName), // 預期 Volume 掛載點
-        path.resolve(__dirname, '../../', dirName),         // 本地開發路徑
-        path.join(process.cwd(), dirName)                    // 當前執行目錄
+        path.join('/home/node/.openclaw/workspace', dirName),
+        path.resolve(__dirname, '../../', dirName),
+        path.join(process.cwd(), dirName),
+        path.join(process.cwd(), '..', dirName)
     ];
+    console.log(`Checking paths for ${dirName}:`, paths);
     for (const p of paths) {
-        if (fs.existsSync(p)) return p;
+        if (fs.existsSync(p)) {
+            console.log(`Found ${dirName} at: ${p}`);
+            return p;
+        }
     }
-    return paths[0]; // 預設返回掛載點
+    return paths[0];
 };
 
 const BRAIN_DIR = getStorageDir('brain');
 const MEMORY_DIR = getStorageDir('memory');
 
-/**
- * 安全性檢查：防止目錄遍歷攻擊 (Directory Traversal)
- */
-const isSafePath = (baseDir: string, fileName: string) => {
-    const fullPath = path.join(baseDir, fileName);
-    return fullPath.startsWith(baseDir) && !fileName.includes('..');
-};
-
-// API: 獲取知識分類列表
+// API: 獲取所有知識分類檔案列表
 app.get('/api/brain/files', (req, res) => {
     try {
         if (!fs.existsSync(BRAIN_DIR)) return res.json([]);
@@ -50,7 +47,7 @@ app.get('/api/brain/files', (req, res) => {
             }));
         res.json(files);
     } catch (error) {
-        res.status(500).json({ error: '無法讀取知識庫' });
+        res.status(500).json({ error: '無法讀取知識庫目錄' });
     }
 });
 
@@ -72,22 +69,13 @@ app.get('/api/memory/logs', (req, res) => {
     }
 });
 
-/**
- * 統一內容讀取路由：區分 brain 與 memory
- */
 app.get('/api/content/:type/:fileName', (req, res) => {
     const { type, fileName } = req.params;
     const baseDir = type === 'memory' ? MEMORY_DIR : BRAIN_DIR;
-
-    if (!isSafePath(baseDir, fileName)) {
-        return res.status(403).json({ error: '非法路徑存取' });
-    }
-
     try {
         const filePath = path.join(baseDir, fileName);
         if (fs.existsSync(filePath)) {
-            const content = fs.readFileSync(filePath, 'utf-8');
-            res.json({ content });
+            res.json({ content: fs.readFileSync(filePath, 'utf-8') });
         } else {
             res.status(404).json({ error: '找不到檔案' });
         }
@@ -96,18 +84,6 @@ app.get('/api/content/:type/:fileName', (req, res) => {
     }
 });
 
-// 靜態資源服務
-const distPath = path.resolve(__dirname, '../dist');
-if (fs.existsSync(distPath)) {
-    app.use(express.static(distPath));
-    app.get('*', (req, res) => {
-        if (!req.path.startsWith('/api')) {
-            res.sendFile(path.join(distPath, 'index.html'));
-        }
-    });
-}
-
-// API: 系統診斷 (幫助顧問檢查路徑)
 app.get('/api/debug/paths', (req, res) => {
     res.json({
         cwd: process.cwd(),
@@ -116,11 +92,38 @@ app.get('/api/debug/paths', (req, res) => {
         MEMORY_DIR,
         brainExists: fs.existsSync(BRAIN_DIR),
         memoryExists: fs.existsSync(MEMORY_DIR),
-        brainContent: fs.existsSync(BRAIN_DIR) ? fs.readdirSync(BRAIN_DIR) : []
+        env: process.env.NODE_ENV
     });
 });
 
+// 靜態檔案服務邏輯修正
+// Vite 預設打包到 dist，server 也在根目錄或 server 目錄
+const possibleDistPaths = [
+    path.resolve(__dirname, '../dist'),
+    path.resolve(__dirname, 'dist'),
+    path.join(process.cwd(), 'dist')
+];
+
+let distPath = '';
+for (const p of possibleDistPaths) {
+    if (fs.existsSync(p)) {
+        distPath = p;
+        break;
+    }
+}
+
+if (distPath) {
+    console.log(`Serving static files from: ${distPath}`);
+    app.use(express.static(distPath));
+    // 讓 React Router 運作，且不干擾 API
+    app.get('*', (req, res, next) => {
+        if (req.path.startsWith('/api')) return next();
+        res.sendFile(path.join(distPath, 'index.html'));
+    });
+} else {
+    console.log("Static files (dist) not found. Running in API-only mode?");
+}
+
 app.listen(port, () => {
-    console.log(`[SERVER] Running on port ${port}`);
-    console.log(`[PATH] Workspace: ${WORKSPACE_DIR}`);
+    console.log(`Server is running on port ${port}`);
 });

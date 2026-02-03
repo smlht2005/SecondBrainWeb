@@ -9,7 +9,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "server": "ts-node-esm server/index.ts",
-    "start": "node --loader ts-node/esm server/index.ts"
+    "start": "node --loader ts-node/esm server/index.ts",
+    "build:server": "tsc server/index.ts --outDir dist-server --module esnext --moduleResolution node"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
