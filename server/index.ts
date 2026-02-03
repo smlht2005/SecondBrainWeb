@@ -13,10 +13,21 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// 知識庫路徑設定
-const WORKSPACE_DIR = path.resolve(__dirname, '../../');
-const BRAIN_DIR = path.join(WORKSPACE_DIR, 'brain');
-const MEMORY_DIR = path.join(WORKSPACE_DIR, 'memory');
+// 智慧路徑探測：優先尋找容器根目錄下的共享空間，若無則回退至相對路徑
+const getStorageDir = (dirName: string) => {
+    const paths = [
+        path.join('/home/node/.openclaw/workspace', dirName), // 預期 Volume 掛載點
+        path.resolve(__dirname, '../../', dirName),         // 本地開發路徑
+        path.join(process.cwd(), dirName)                    // 當前執行目錄
+    ];
+    for (const p of paths) {
+        if (fs.existsSync(p)) return p;
+    }
+    return paths[0]; // 預設返回掛載點
+};
+
+const BRAIN_DIR = getStorageDir('brain');
+const MEMORY_DIR = getStorageDir('memory');
 
 /**
  * 安全性檢查：防止目錄遍歷攻擊 (Directory Traversal)
@@ -95,6 +106,19 @@ if (fs.existsSync(distPath)) {
         }
     });
 }
+
+// API: 系統診斷 (幫助顧問檢查路徑)
+app.get('/api/debug/paths', (req, res) => {
+    res.json({
+        cwd: process.cwd(),
+        __dirname,
+        BRAIN_DIR,
+        MEMORY_DIR,
+        brainExists: fs.existsSync(BRAIN_DIR),
+        memoryExists: fs.existsSync(MEMORY_DIR),
+        brainContent: fs.existsSync(BRAIN_DIR) ? fs.readdirSync(BRAIN_DIR) : []
+    });
+});
 
 app.listen(port, () => {
     console.log(`[SERVER] Running on port ${port}`);
