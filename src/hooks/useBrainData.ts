@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BrainFile, LogEntry } from '../types';
+import type { BrainFile, LogEntry } from '../types';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 

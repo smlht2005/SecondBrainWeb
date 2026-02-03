@@ -3,7 +3,7 @@ import { Box, Toolbar, Container, Stack, Chip, Paper, Typography } from '@mui/ma
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { SelectedItem } from '../types';
+import type { SelectedItem } from '../types';
 
 interface MainContentProps {
     selectedItem: SelectedItem | null;

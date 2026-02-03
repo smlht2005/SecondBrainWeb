@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Box, CssBaseline, ThemeProvider, Drawer, useMediaQuery, CircularProgress } from '@mui/material';
 import { theme } from './theme/theme';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { MainContent } from './components/MainContent';
 import { useBrainData } from './hooks/useBrainData';
-import { SelectedItem } from './types';
+import type { SelectedItem } from './types';
 
 const drawerWidth = 280;
 

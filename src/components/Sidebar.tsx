@@ -8,7 +8,7 @@ import {
     History as HistoryIcon,
     Description as FileIcon
 } from '@mui/icons-material';
-import { BrainFile, LogEntry, SelectedItem } from '../types';
+import type { BrainFile, LogEntry, SelectedItem } from '../types';
 
 interface SidebarProps {
     files: BrainFile[];
