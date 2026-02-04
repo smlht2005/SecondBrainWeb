@@ -10,10 +10,28 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const port = process.env.PORT || 3000;
 
-app.use(cors());
+// 安全性設定：限制 CORS 來源
+const allowedOrigins = ['https://clawbrain.zeabur.app'];
+// 本地開發時允許 localhost
+if (process.env.NODE_ENV !== 'production') {
+    allowedOrigins.push('http://localhost:5173');
+}
+
+app.use(cors({
+    origin: (origin, callback) => {
+        // 允許沒有 origin 的請求 (如 curl, postman 或同源請求)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.indexOf(origin) === -1) {
+            // 可選：記錄被阻擋的來源以供分析
+            console.warn(`Blocked CORS request from: ${origin}`);
+            return callback(new Error('CORS policy violation'), false);
+        }
+        return callback(null, true);
+    }
+}));
+
 app.use(express.json());
 
-// **修復重點**：API 路由必須優先於靜態檔案處理
 // 智慧路徑探測
 const getStorageDir = (dirName: string) => {
     const paths = [
@@ -86,17 +104,7 @@ apiRouter.get('/content/:type/:fileName', (req, res) => {
     }
 });
 
-apiRouter.get('/debug/paths', (req, res) => {
-    res.json({
-        cwd: process.cwd(),
-        __dirname,
-        BRAIN_DIR,
-        MEMORY_DIR,
-        brainExists: fs.existsSync(BRAIN_DIR),
-        memoryExists: fs.existsSync(MEMORY_DIR),
-        env: process.env.NODE_ENV
-    });
-});
+// [Security] 移除 /debug/paths 路由以防止資訊洩漏
 
 // 掛載 API
 app.use('/api', apiRouter);
