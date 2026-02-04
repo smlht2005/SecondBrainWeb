@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { BrainFile, LogEntry } from '../types';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL;
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
 
 export const useBrainData = () => {
     const [files, setFiles] = useState<BrainFile[]>([]);
