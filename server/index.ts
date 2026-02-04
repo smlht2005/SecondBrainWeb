@@ -13,12 +13,7 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// 全域 Request 日誌，幫助顧問診斷
-app.use((req, res, next) => {
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-    next();
-});
-
+// **修復重點**：API 路由必須優先於靜態檔案處理
 // 智慧路徑探測
 const getStorageDir = (dirName: string) => {
     const paths = [
@@ -36,11 +31,12 @@ const getStorageDir = (dirName: string) => {
 const BRAIN_DIR = getStorageDir('brain');
 const MEMORY_DIR = getStorageDir('memory');
 
-// --- API 路由區 (必須在靜態檔案之前) ---
-
+// --- API 路由定義 (必須在靜態檔案與 Catch-All 之前) ---
 const apiRouter = express.Router();
 
 apiRouter.get('/brain/files', (req, res) => {
+    // 強制回傳 JSON Header
+    res.setHeader('Content-Type', 'application/json');
     try {
         if (!fs.existsSync(BRAIN_DIR)) return res.json([]);
         const files = fs.readdirSync(BRAIN_DIR)
@@ -57,6 +53,7 @@ apiRouter.get('/brain/files', (req, res) => {
 });
 
 apiRouter.get('/memory/logs', (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
     try {
         if (!fs.existsSync(MEMORY_DIR)) return res.json([]);
         const logs = fs.readdirSync(MEMORY_DIR)
@@ -74,6 +71,7 @@ apiRouter.get('/memory/logs', (req, res) => {
 });
 
 apiRouter.get('/content/:type/:fileName', (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
     const { type, fileName } = req.params;
     const baseDir = type === 'memory' ? MEMORY_DIR : BRAIN_DIR;
     try {
@@ -100,9 +98,10 @@ apiRouter.get('/debug/paths', (req, res) => {
     });
 });
 
+// 掛載 API
 app.use('/api', apiRouter);
 
-// --- 靜態檔案區 ---
+// --- 靜態檔案區 (必須在 API 之後) ---
 
 const possibleDistPaths = [
     path.resolve(__dirname, '../dist'),
