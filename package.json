@@ -5,11 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && tsc -p tsconfig.server.json && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "server": "ts-node-esm server/index.ts",
-    "start": "node --loader ts-node/esm server/index.ts"
+    "server": "node dist-server/index.js",
+    "start": "node dist-server/index.js"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
