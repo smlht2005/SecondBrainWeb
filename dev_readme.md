@@ -1,11 +1,77 @@
 /**
  * 開發日誌 - Second Brain Web
- * 更新時間：2026-02-05 18:45
+ * 更新時間：2026-02-06 00:20
  * 更新者：AI Assistant
- * 更新摘要：允許 brain/ 和 memory/ 驗證資料上傳到 GitHub 和 Zeabur
+ * 更新摘要：實施靜態檔案架構，移除 API 路由，改為直接存取靜態檔案
  */
 
 # 開發歷程記錄
+
+## 2026-02-06 00:20 - 實施靜態檔案架構
+
+### 完成內容
+
+#### 架構變更
+- ✅ 移除所有 Express API 路由（`/api/brain/files`, `/api/memory/logs`, `/api/content/:type/:fileName`）
+- ✅ 改為直接存取靜態檔案（`/brain/manifest.json`, `/memory/manifest.json`, `/{type}/{fileName}`）
+- ✅ 簡化 `server/index.ts`，只保留靜態檔案服務和 SPA catch-all 路由
+
+#### 新增功能
+- ✅ 安裝 `vite-plugin-static-copy` - 在建置時複製 `brain/` 和 `memory/` 目錄到 `dist/`
+- ✅ 創建 `scripts/generate-manifest.js` - 自動生成檔案列表 manifest.json
+- ✅ 更新建置流程 - `npm run build` 現在會自動生成 manifest 檔案
+
+#### 修改檔案
+1. **`package.json`**
+   - 更新 `build` 腳本：`node scripts/generate-manifest.js && tsc -b && tsc -p tsconfig.server.json && vite build`
+
+2. **`vite.config.ts`**
+   - 新增 `vite-plugin-static-copy` 配置
+   - 複製 `brain/**/*` 和 `memory/**/*` 到 `dist/`
+
+3. **`src/hooks/useBrainData.ts`**
+   - 移除 API 呼叫邏輯
+   - 改為直接 fetch `/brain/manifest.json` 和 `/memory/manifest.json`
+   - `fetchContent` 改為直接 fetch `/{type}/{fileName}` 並返回文字內容
+
+4. **`server/index.ts`**
+   - 移除所有 API 路由和 CORS 中間件
+   - 簡化為靜態檔案服務 + SPA catch-all + 健康檢查端點
+
+#### 建置驗證
+- ✅ `npm run build` 成功完成
+- ✅ `dist/brain/manifest.json` 包含 9 個檔案
+- ✅ `dist/memory/manifest.json` 包含 2 個檔案
+- ✅ `dist/brain/` 和 `dist/memory/` 目錄包含所有 Markdown 檔案
+- ✅ 本地伺服器測試通過（`npm start`）
+
+#### Git 操作
+- ✅ 提交變更（Commit: 3898fd6）
+- ✅ 推送到 GitHub (main 分支)
+
+### 優點
+
+1. **簡單** - 不需要 API 邏輯，減少複雜度
+2. **快速** - 靜態檔案直接由 Express 服務，無需額外處理
+3. **可靠** - 減少出錯可能性，避免 API 返回 HTML 的問題
+4. **易於調試** - 可以直接在瀏覽器訪問 `/brain/manifest.json` 查看檔案列表
+
+### 限制
+
+1. 每次新增檔案需要重新建置
+2. 不支援動態操作（新增/刪除檔案）
+3. 檔案列表在建置時固定
+
+### 下一步
+
+Zeabur 部署後，應用程式將：
+1. 自動從靜態檔案讀取資料
+2. 無需 API 端點，減少部署複雜度
+3. 直接存取 Markdown 檔案，效能更好
+
+---
+
+## 2026-02-05 18:45 - 允許驗證資料包含在部署中
 
 ## 2026-02-05 18:45 - 允許驗證資料包含在部署中
 
