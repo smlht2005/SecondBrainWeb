@@ -6,8 +6,7 @@
     "outDir": "dist-server",
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "strict": true,
-    "types": ["node", "express"]
+    "strict": true
   },
   "include": ["server/**/*"]
 }
