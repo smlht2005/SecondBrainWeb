@@ -1,7 +1,7 @@
 export interface BrainFile {
     name: string;
     fileName: string;
-    type: 'brain';
+    type: 'brain' | 'todo';
 }
 
 export interface LogEntry {
@@ -13,5 +13,5 @@ export interface LogEntry {
 export type SelectedItem = {
     name: string;
     fileName: string;
-    type: 'brain' | 'memory';
+    type: 'brain' | 'memory' | 'todo';
 };

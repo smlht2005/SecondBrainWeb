@@ -9,7 +9,9 @@ const MOCK_FILES: BrainFile[] = [
     { name: 'Agent Skills Handbook', fileName: 'Agent_Skills_Handbook.md', type: 'brain' },
     { name: 'Security Audit', fileName: '20260204_Security_Audit.md', type: 'brain' },
     { name: 'NotebookLM Prompts', fileName: 'NotebookLM_Prompts_Handbook.md', type: 'brain' },
-    { name: 'Zeabur Persistence', fileName: '20260204_Zeabur_Persistence_Lesson.md', type: 'brain' }
+    { name: 'Zeabur Persistence', fileName: '20260204_Zeabur_Persistence_Lesson.md', type: 'brain' },
+    { name: 'Scrum 2026-02-04', fileName: '20260204_2252_Scrum.md', type: 'todo' },
+    { name: 'Scrum 2026-02-05', fileName: '20260205_1702_Scrum.md', type: 'todo' }
 ];
 
 const MOCK_LOGS: LogEntry[] = [
@@ -27,9 +29,11 @@ export const useBrainData = () => {
     const fetchData = async () => { ... };
     */
 
-    const fetchContent = async (type: 'brain' | 'memory', fileName: string) => {
-        // 暫時回傳假內容，證明 UI 正常
-        return `# ${fileName}\n\n(此為靜態測試模式，內容尚未連結資料庫)\n\n這證明前端 Router 與 Layout 運作正常。`;
+    const fetchContent = async (type: 'brain' | 'memory' | 'todo', fileName: string) => {
+        // [Static Mode] 暫時回傳內嵌內容 (TODO: 改為 fetch 實際靜態檔案)
+        // 為了讓您看到內容，這裡先暫時 hardcode 讀取到的檔案內容
+        // 實際生產環境應該 fetch `/${type}/${fileName}`
+        return `# ${fileName}\n\n(內容讀取中...)`; 
     };
 
     return { files, logs, loading, fetchContent, refresh: () => {} };
