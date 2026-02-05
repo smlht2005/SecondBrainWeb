@@ -124,26 +124,36 @@
 # 1. 拉取 GitHub 代碼
 Cloning repository...
 
-# 2. 檢測到 Dockerfile
-Detected Dockerfile, using Docker build...
+# 2. 自動檢測 Node.js 專案
+Detected Node.js project (package.json found)
+Using source code deployment (no Dockerfile detected)
 
-# 3. 執行 Docker 建置
-Step 1/12 : FROM node:20-alpine AS builder
-Step 2/12 : WORKDIR /app
-...
-Step 12/12 : CMD ["npm", "start"]
+# 3. 安裝依賴
+Running: npm ci
+Installing dependencies (including devDependencies for build)...
 
-# 4. 部署成功
+# 4. 執行建置
+Running: npm run build
+Building TypeScript...
+Building frontend with Vite...
+
+# 5. 啟動伺服器
+Running: npm start
+Server started on port 3000
+
+# 6. 部署成功
 Deployment successful!
 Service URL: https://secondbrainweb-xxxx.zeabur.app
 ```
 
 ### 5.3 建置時間
 
-預計 **2-4 分鐘**，取決於：
+預計 **3-5 分鐘**，取決於：
 - 網路速度
-- 依賴安裝時間
-- Docker 層快取
+- 依賴安裝時間（npm ci）
+- TypeScript 編譯時間
+- Vite 建置時間
+- Zeabur 會快取 node_modules，但建置步驟仍需要執行
 
 ---
 
@@ -202,7 +212,7 @@ curl https://your-app.zeabur.app/api/brain/files
 curl https://your-app.zeabur.app/api/memory/logs
 ```
 
-**預期回應**（驗證資料已包含在 Docker 映像中）：
+**預期回應**（驗證資料已包含在源代碼中，會自動部署）：
 ```json
 [
   {
@@ -224,7 +234,7 @@ curl https://your-app.zeabur.app/api/memory/logs
 ]
 ```
 
-**注意**：驗證資料（`brain/測試文件.md` 和 `memory/2026-02-05.md`）已包含在 Docker 映像中，部署後可立即看到，無需手動上傳。
+**注意**：驗證資料（`brain/測試文件.md` 和 `memory/2026-02-05.md`）已包含在 Git 源代碼中，Zeabur 部署時會自動包含，無需手動上傳。
 
 ### 7.3 前端頁面測試
 
@@ -253,7 +263,7 @@ curl https://your-app.zeabur.app/api/memory/logs
 
 ## 📁 步驟 8：上傳額外生產資料（可選）
 
-**重要說明**：驗證資料（`brain/測試文件.md` 和 `memory/2026-02-05.md`）已包含在 Docker 映像中，部署後可立即看到。此步驟僅適用於需要上傳額外生產資料的情況。
+**重要說明**：驗證資料（`brain/測試文件.md` 和 `memory/2026-02-05.md`）已包含在 Git 源代碼中，Zeabur 部署時會自動包含。此步驟僅適用於需要上傳額外生產資料的情況。
 
 ### 方法 A：使用 Zeabur CLI
 
@@ -356,13 +366,17 @@ const allowedOrigins = [
 ### 問題 1：部署失敗，出現 "Build failed"
 
 **可能原因**：
-- Dockerfile 語法錯誤
-- 依賴安裝失敗
+- 依賴安裝失敗（npm ci）
+- TypeScript 編譯錯誤
+- Vite 建置失敗
+- Node.js 版本不匹配
 
 **解決方案**：
 1. 檢查 Zeabur 的 Logs 標籤，查看詳細錯誤訊息
-2. 確認 Dockerfile 與本地測試時一致
-3. 確認 `package.json` 中的 dependencies 正確
+2. 確認 `package.json` 中的 dependencies 和 devDependencies 正確
+3. 確認 `package.json` 中的 `engines` 欄位指定了正確的 Node.js 版本
+4. 確認 `zeabur.yaml` 中的 build 命令正確：`npm ci && npm run build`
+5. 在本地執行 `npm ci && npm run build` 測試建置是否成功
 
 ### 問題 2：靜態資源返回 404 或 MIME type 錯誤
 
@@ -377,21 +391,24 @@ is not a supported stylesheet MIME type
 - `dist/` 目錄缺失
 
 **解決方案**：
-1. 確認 `Dockerfile` 中的 `RUN npm run build` 執行成功
-2. 檢查建置日誌，確認 Vite 建置完成
+1. 檢查 Zeabur 建置日誌，確認 `npm run build` 執行成功
+2. 確認 Vite 建置完成，`dist/` 目錄已生成
 3. 確認 `server/index.ts` 中的 `distPath` 路徑正確
+4. 確認 `zeabur.yaml` 中的 build 命令包含 `npm run build`
 
 ### 問題 3：API 返回空陣列
 
 **原因**：如果 API 返回空陣列，可能是：
-- Docker 映像中沒有包含驗證資料（檢查 `.dockerignore` 是否排除了 `brain/` 和 `memory/`）
-- Volume 掛載路徑不正確
+- 驗證資料未包含在 Git 中（檢查 `brain/` 和 `memory/` 是否被 `.gitignore` 排除）
+- 路徑探測失敗（`getStorageDir()` 無法找到目錄）
+- Volume 掛載路徑不正確（如果使用 Volume）
 
 **解決方案**：
-- 確認 `.dockerignore` 沒有排除 `brain/` 和 `memory/` 目錄
-- 確認驗證資料已提交到 Git（`brain/測試文件.md` 和 `memory/2026-02-05.md`）
+- 確認 `.gitignore` 沒有排除 `brain/` 和 `memory/` 目錄
+- 確認驗證資料已提交到 Git（`git ls-files brain/ memory/`）
+- 確認 `server/index.ts` 中的 `getStorageDir()` 函數能正確探測路徑
+- 檢查 Zeabur 建置日誌，確認源代碼已正確拉取
 - 確認 Volume 已正確配置（如果使用 Volume 存儲額外資料）
-- 重新建置 Docker 映像並部署
 
 ### 問題 4：CORS 錯誤
 
@@ -451,10 +468,11 @@ curl https://your-app.zeabur.app/api/memory/logs
 ### 部署前
 - [x] 所有變更已提交到 Git
 - [x] 已推送到 GitHub
-- [x] Dockerfile 已建立並測試
-- [x] `.dockerignore` 已配置
-- [x] `.env.production` 已建立
-- [x] 本地 Docker 測試通過
+- [x] `zeabur.yaml` 配置正確（build 和 start 命令）
+- [x] `package.json` 有正確的 build 和 start 腳本
+- [x] `package.json` 指定了 Node.js 版本（engines）
+- [x] 驗證資料已包含在 Git 中（`brain/` 和 `memory/`）
+- [x] Dockerfile 已重命名為 `Dockerfile.local`（避免 Zeabur 使用）
 
 ### 部署中
 - [ ] Zeabur 專案已創建

@@ -25,14 +25,15 @@
 | 靜態資源 MIME type 錯誤 | ✅ 已修復 | 移除全局 CORS，僅在 API 路由套用 |
 | CORS 阻擋靜態資源 | ✅ 已修復 | 重構 CORS 配置，分離 API 和靜態資源處理 |
 
-### 2. Docker 容器化
+### 2. Zeabur 源代碼部署配置
 
 | 項目 | 狀態 | 說明 |
 |------|------|------|
-| Dockerfile | ✅ 已建立 | 多階段建置，優化映像大小 |
-| .dockerignore | ✅ 已建立 | 排除測試資料和建置產物 |
-| 本地測試 | ✅ 通過 | 容器運行正常，所有功能驗證通過 |
-| 靜態資源載入 | ✅ 正常 | CSS/JS 正確載入，MIME type 正確 |
+| zeabur.yaml | ✅ 已配置 | 源代碼部署配置（npm ci && npm run build） |
+| package.json engines | ✅ 已添加 | 指定 Node.js >=20.0.0 |
+| Dockerfile | ✅ 已重命名 | 重命名為 Dockerfile.local（保留用於本地測試） |
+| 建置腳本 | ✅ 正確 | build 和 start 腳本已配置 |
+| 驗證資料 | ✅ 已包含 | 自動包含在 Git 和部署中 |
 
 ### 3. 環境配置
 
@@ -40,7 +41,7 @@
 |------|------|------|
 | `.env.production` | ✅ 已建立 | 生產環境變數配置 |
 | `.gitignore` | ✅ 已更新 | 排除開發測試資料 |
-| `.dockerignore` | ✅ 已建立 | 排除 Docker 不需要的文件 |
+| `zeabur.yaml` | ✅ 已配置 | Zeabur 源代碼部署配置 |
 | `brain/.gitkeep` | ✅ 已建立 | 保留目錄結構 |
 | `memory/.gitkeep` | ✅ 已建立 | 保留目錄結構 |
 
@@ -77,20 +78,21 @@
 
 ## 📊 驗證結果
 
-### Docker 本地測試
+### Zeabur 源代碼部署流程
 
-| 測試項目 | 結果 | 詳情 |
-|---------|------|------|
-| 容器啟動 | ✅ 通過 | 運行時間：4+ 分鐘 |
-| 健康檢查 | ✅ 通過 | `200 OK` - `{"status":"healthy"}` |
-| API 端點 | ✅ 通過 | `200 OK` - 返回測試資料 |
-| 靜態資源 | ✅ 通過 | CSS: `text/css`, JS: `text/javascript` |
-| 前端頁面 | ✅ 通過 | 完整渲染，無錯誤 |
-| CORS 配置 | ✅ 正確 | 無阻擋錯誤 |
+### Zeabur 源代碼部署流程
 
-**測試容器**: `secondbrain-fixed`  
-**訪問端口**: http://localhost:3001  
-**測試截圖**: 用戶已確認頁面正常顯示
+Zeabur 會自動執行以下步驟：
+
+1. **拉取源代碼** - 從 GitHub 拉取最新代碼
+2. **檢測專案類型** - 自動檢測為 Node.js 專案（檢測到 package.json）
+3. **安裝依賴** - 執行 `npm ci`（安裝所有依賴，包括 devDependencies）
+4. **建置專案** - 執行 `npm run build`（TypeScript 編譯 + Vite 建置）
+5. **啟動伺服器** - 執行 `npm start`（啟動 Express 伺服器）
+6. **包含驗證資料** - `brain/` 和 `memory/` 自動包含（已在 Git 中）
+
+**預期建置時間**: 3-5 分鐘  
+**部署方式**: 源代碼部署（不使用 Dockerfile）
 
 ---
 
@@ -128,7 +130,8 @@
 #### 自動檢測
 
 - `PORT`: Zeabur 自動注入
-- Dockerfile: 自動檢測並使用
+- Node.js 版本: Zeabur 自動檢測（或使用 package.json engines）
+- 建置方式: 源代碼部署（不使用 Dockerfile）
 
 ### ✅ 部署步驟預覽
 
@@ -160,8 +163,8 @@ SecondBrainWeb/
 ├── 📂 memory/                       # 記憶日誌（包含驗證資料）
 │   ├── .gitkeep
 │   └── 2026-02-05.md                # 驗證資料
-├── 📄 Dockerfile                    # ✅ Docker 配置
-├── 📄 .dockerignore                 # ✅ Docker 忽略文件
+├── 📄 zeabur.yaml                   # ✅ Zeabur 源代碼部署配置
+├── 📄 Dockerfile.local              # ✅ Docker 配置（僅用於本地測試）
 ├── 📄 .env.production               # ✅ 生產環境變數
 ├── 📄 package.json                  # 依賴和腳本
 ├── 📄 README.md                     # ✅ 專案文檔（已更新）
@@ -199,7 +202,8 @@ Zeabur 部署
 
 ### ✅ 確認配置
 
-- [x] Docker 本地測試通過
+- [x] zeabur.yaml 配置正確
+- [x] package.json engines 已指定
 - [x] 所有文件已提交到 Git
 - [x] 已推送到 GitHub
 - [x] CORS 配置正確
@@ -209,7 +213,7 @@ Zeabur 部署
 ### 📋 部署檢查清單
 
 部署前：
-- [x] Docker 測試通過
+- [x] 源代碼部署配置完成
 - [x] Git 推送完成
 - [ ] Zeabur 帳號已登入
 - [ ] GitHub Repository 已授權
@@ -232,7 +236,7 @@ Zeabur 部署
 ### 官方文檔
 
 - [Zeabur 文檔](https://zeabur.com/docs)
-- [Docker 文檔](https://docs.docker.com/)
+- [Zeabur 文檔](https://zeabur.com/docs)
 - [Express.js 文檔](https://expressjs.com/)
 
 ### 專案文檔
@@ -247,7 +251,7 @@ Zeabur 部署
 如遇到問題，請參考：
 1. [`ZEABUR_DEPLOYMENT_GUIDE.md`](ZEABUR_DEPLOYMENT_GUIDE.md) - 故障排除章節
 2. Zeabur Dashboard → Logs - 查看建置日誌
-3. Docker 本地測試 - 重現問題
+3. 本地建置測試 - 執行 `npm ci && npm run build` 重現問題
 
 ---
 
@@ -256,8 +260,8 @@ Zeabur 部署
 ### ✅ 已完成
 
 1. ✅ 診斷並修復所有錯誤（API 連接、路由、CORS）
-2. ✅ 完成 Docker 容器化配置
-3. ✅ 本地 Docker 測試全部通過
+2. ✅ 完成 Zeabur 源代碼部署配置
+3. ✅ 配置 zeabur.yaml 和 package.json
 4. ✅ 提交所有變更並推送到 GitHub
 5. ✅ 建立完整的部署文檔
 

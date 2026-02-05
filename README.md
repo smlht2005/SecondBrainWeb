@@ -123,13 +123,13 @@ npm run dev:all
 
 ### ⚠️ 重要：驗證資料說明
 
-**`brain/` 和 `memory/` 目錄中的驗證資料會包含在 Git 版本控制和 Docker 部署中。**
+**`brain/` 和 `memory/` 目錄中的驗證資料會包含在 Git 版本控制和 Zeabur 源代碼部署中。**
 
 - ✅ 驗證資料：`brain/測試文件.md` 和 `memory/2026-02-05.md` 用於功能驗證
 - ✅ Git 追蹤：驗證資料會被提交到 GitHub，方便協作和部署
-- ✅ Docker 包含：驗證資料會被打包到 Docker 映像中
+- ✅ 源代碼部署：Zeabur 使用源代碼部署，驗證資料自動包含（不使用 Dockerfile）
 - ✅ Zeabur 部署：部署後可立即看到驗證資料，無需手動上傳
-- ✅ 生產資料：生產環境仍可使用 Zeabur Volume 進行持久化存儲（`/home/node/.openclaw/workspace/`）
+- ✅ 生產資料：生產環境仍可使用 Zeabur Volume 進行額外的資料持久化存儲（`/home/node/.openclaw/workspace/`）
 
 ### 📋 部署平台：Zeabur
 
@@ -158,19 +158,21 @@ npm run dev:all
      - Size: 1GB（視需求調整）
 
 3. **部署**
-   - 點擊 Deploy，Zeabur 會自動執行 `npm run build` 和 `npm start`
+   - 點擊 Deploy，Zeabur 會自動：
+     - 檢測 Node.js 專案（檢測到 `package.json`）
+     - 執行 `npm ci`（安裝所有依賴，包括 devDependencies）
+     - 執行 `npm run build`（建置前端和後端）
+     - 執行 `npm start`（啟動生產伺服器）
+   - 驗證資料（`brain/` 和 `memory/`）會自動包含在部署中
 
-4. **上傳生產資料**
-   ```bash
-   # 使用 Zeabur CLI
-   npm install -g @zeabur/cli
-   zeabur login
-   zeabur volume upload --service secondbrainweb \
-     --path /home/node/.openclaw/workspace/brain \
-     ./production-data/brain/welcome.md
-   ```
+4. **驗證部署**
+   - 部署完成後，訪問 Zeabur 提供的 URL
+   - 測試 API 端點，確認返回驗證資料
+   - 前端頁面會自動顯示所有知識庫文件
 
-### 🐳 Docker 本地測試
+**注意**：Zeabur 使用源代碼部署（不使用 Dockerfile），所有驗證資料會自動包含。
+
+### 🐳 Docker 本地測試（可選）
 
 部署前可使用 Docker 驗證配置：
 
@@ -184,8 +186,8 @@ New-Item -ItemType Directory -Path docker-test-data\brain, docker-test-data\memo
 echo "# Docker 測試文件" | Out-File -FilePath docker-test-data\brain\test.md -Encoding utf8
 echo "# Docker 測試日誌" | Out-File -FilePath docker-test-data\memory\2026-02-05.md -Encoding utf8
 
-# 2. 建置映像（.dockerignore 會排除本地 brain/ 和 memory/）
-docker build -t secondbrainweb:latest .
+# 2. 建置映像（使用 Dockerfile.local）
+docker build -f Dockerfile.local -t secondbrainweb:latest .
 
 # 3. 運行容器（掛載測試資料，模擬 Zeabur Volume）
 docker run -d `
@@ -220,8 +222,8 @@ mkdir -p docker-test-data/brain docker-test-data/memory
 echo "# Docker 測試文件" > docker-test-data/brain/test.md
 echo "# Docker 測試日誌" > docker-test-data/memory/2026-02-05.md
 
-# 2. 建置映像
-docker build -t secondbrainweb:latest .
+# 2. 建置映像（使用 Dockerfile.local）
+docker build -f Dockerfile.local -t secondbrainweb:latest .
 
 # 3. 運行容器
 docker run -d \
