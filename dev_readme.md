@@ -1,11 +1,92 @@
 /**
  * 開發日誌 - Second Brain Web
- * 更新時間：2026-02-05 18:24
+ * 更新時間：2026-02-05 18:45
  * 更新者：AI Assistant
- * 更新摘要：完成 CORS 配置修復，所有部署驗證測試通過
+ * 更新摘要：允許 brain/ 和 memory/ 驗證資料上傳到 GitHub 和 Zeabur
  */
 
 # 開發歷程記錄
+
+## 2026-02-05 18:45 - 允許驗證資料包含在部署中
+
+### 完成內容
+
+#### 配置變更
+- ✅ 修改 `.gitignore` - 移除 `brain/` 和 `memory/` 的排除規則
+- ✅ 修改 `.dockerignore` - 移除 `brain/` 和 `memory/` 的排除規則
+- ✅ 更新 `Dockerfile` - 在生產階段複製驗證資料到映像
+
+#### 驗證資料
+- ✅ `brain/測試文件.md` - 包含測試內容和代碼示例
+- ✅ `memory/2026-02-05.md` - 包含對話日誌
+
+#### Git 操作
+- ✅ 將驗證資料加入 Git 追蹤
+- ✅ 提交變更（Commit: 680774b）
+
+#### Docker 驗證
+- ✅ 驗證 Docker 映像包含驗證資料
+- ✅ 確認 `/app/brain/測試文件.md` 和 `/app/memory/2026-02-05.md` 存在於映像中
+
+#### 文檔更新
+- ✅ 更新 `README.md` - 說明驗證資料會包含在部署中
+- ✅ 更新 `DEPLOYMENT_SUMMARY.md` - 更新資料隔離策略說明
+- ✅ 更新 `ZEABUR_DEPLOYMENT_GUIDE.md` - 更新驗證測試和故障排除說明
+
+### 效果
+
+現在 `brain/` 和 `memory/` 目錄中的驗證資料會：
+- ✅ 被 Git 追蹤並提交到 GitHub
+- ✅ 包含在 Docker 映像中
+- ✅ 自動部署到 Zeabur，無需手動上傳
+- ✅ 用於功能驗證，確保部署後可立即看到資料
+
+### 下一步
+
+用戶可以：
+1. 推送到 GitHub：`git push origin main`
+2. 部署到 Zeabur，驗證資料會自動包含
+3. 測試 API 端點，確認返回驗證資料
+
+---
+
+## 2026-02-05 18:30 - Git 推送和 Zeabur 部署文檔
+
+### 完成內容
+
+#### Git 版本控制
+- ✅ 提交所有部署相關變更（Commit: fb52fc2）
+- ✅ 推送到 GitHub (main 分支)
+- ✅ 排除測試資料（.spec-workflow/）
+
+#### Zeabur 部署文檔
+建立完整的部署文檔體系：
+
+1. **[`ZEABUR_QUICK_START.md`](ZEABUR_QUICK_START.md)** - 5 分鐘快速開始
+   - 簡潔的部署步驟
+   - 快速驗證測試
+   - 常見問題參考
+
+2. **[`ZEABUR_DEPLOYMENT_GUIDE.md`](ZEABUR_DEPLOYMENT_GUIDE.md)** - 完整部署指南
+   - 詳細的配置說明
+   - 故障排除指南
+   - 資料上傳方法
+   - 監控建議
+
+3. **[`DEPLOYMENT_SUMMARY.md`](DEPLOYMENT_SUMMARY.md)** - 部署總結報告
+   - 所有已完成工作清單
+   - 驗證結果匯總
+   - 部署步驟預覽
+   - 重要提醒事項
+
+### 下一步
+
+用戶現在可以：
+1. 訪問 [https://zeabur.com](https://zeabur.com)
+2. 按照 `ZEABUR_QUICK_START.md` 進行部署
+3. 參考 `ZEABUR_DEPLOYMENT_GUIDE.md` 解決問題
+
+---
 
 ## 2026-02-05 18:24 - CORS 配置修復（最終版本）
 
