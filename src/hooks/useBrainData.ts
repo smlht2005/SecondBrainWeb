@@ -1,7 +1,12 @@
+/**
+ * useBrainData Hook - 使用靜態檔案架構
+ * 更新時間：2026-02-06 00:12
+ * 更新者：AI Assistant
+ * 更新摘要：改為直接讀取靜態 manifest.json 和 Markdown 檔案，移除 API 依賴
+ */
+
 import { useState, useEffect } from 'react';
 import type { BrainFile, LogEntry } from '../types';
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
 
 export const useBrainData = () => {
     const [files, setFiles] = useState<BrainFile[]>([]);
@@ -10,43 +15,31 @@ export const useBrainData = () => {
 
     const fetchData = async () => {
         try {
-            const [filesRes, logsRes] = await Promise.all([
-                fetch(`${API_BASE}/brain/files`),
-                fetch(`${API_BASE}/memory/logs`)
+            console.log('[Static] Fetching manifest files...');
+            const [brainRes, memoryRes] = await Promise.all([
+                fetch('/brain/manifest.json'),
+                fetch('/memory/manifest.json')
             ]);
             
-            // 檢查響應狀態和 Content-Type
-            if (!filesRes.ok) {
-                const text = await filesRes.text();
-                console.error(`Brain API error (${filesRes.status}):`, text.substring(0, 200));
+            if (!brainRes.ok) {
+                console.error(`Brain manifest error (${brainRes.status}):`, await brainRes.text());
                 setFiles([]);
             } else {
-                const contentType = filesRes.headers.get('content-type');
-                if (contentType && contentType.includes('application/json')) {
-                    setFiles(await filesRes.json());
-                } else {
-                    const text = await filesRes.text();
-                    console.error('Brain API returned non-JSON:', text.substring(0, 200));
-                    setFiles([]);
-                }
+                const brainData = await brainRes.json();
+                console.log(`[Static] Loaded ${brainData.files?.length || 0} brain files`);
+                setFiles(brainData.files || []);
             }
             
-            if (!logsRes.ok) {
-                const text = await logsRes.text();
-                console.error(`Memory API error (${logsRes.status}):`, text.substring(0, 200));
+            if (!memoryRes.ok) {
+                console.error(`Memory manifest error (${memoryRes.status}):`, await memoryRes.text());
                 setLogs([]);
             } else {
-                const contentType = logsRes.headers.get('content-type');
-                if (contentType && contentType.includes('application/json')) {
-                    setLogs(await logsRes.json());
-                } else {
-                    const text = await logsRes.text();
-                    console.error('Memory API returned non-JSON:', text.substring(0, 200));
-                    setLogs([]);
-                }
+                const memoryData = await memoryRes.json();
+                console.log(`[Static] Loaded ${memoryData.files?.length || 0} memory files`);
+                setLogs(memoryData.files || []);
             }
         } catch (e) {
-            console.error("Fetch data error", e);
+            console.error("[Static] Fetch manifest error", e);
             setFiles([]);
             setLogs([]);
         } finally {
@@ -56,23 +49,17 @@ export const useBrainData = () => {
 
     const fetchContent = async (type: 'brain' | 'memory', fileName: string) => {
         try {
-            const res = await fetch(`${API_BASE}/content/${type}/${fileName}`);
+            console.log(`[Static] Fetching content: /${type}/${fileName}`);
+            const res = await fetch(`/${type}/${fileName}`);
             if (!res.ok) {
-                const text = await res.text();
-                console.error(`Content API error (${res.status}):`, text.substring(0, 200));
+                console.error(`Content fetch error (${res.status}):`, await res.text());
                 return '讀取內容失敗';
             }
-            const contentType = res.headers.get('content-type');
-            if (contentType && contentType.includes('application/json')) {
-                const data = await res.json();
-                return data.content;
-            } else {
-                const text = await res.text();
-                console.error('Content API returned non-JSON:', text.substring(0, 200));
-                return '讀取內容失敗';
-            }
+            const content = await res.text();
+            console.log(`[Static] Successfully loaded ${fileName} (${content.length} chars)`);
+            return content;
         } catch (e) {
-            console.error("Fetch content error", e);
+            console.error("[Static] Fetch content error", e);
             return '讀取內容失敗';
         }
     };

@@ -1,0 +1,49 @@
+{
+  "files": [
+    {
+      "name": "20260204 & Security_Audit",
+      "fileName": "20260204_Security_Audit.md",
+      "type": "brain"
+    },
+    {
+      "name": "20260204 & Zeabur_Persistence_Lesson",
+      "fileName": "20260204_Zeabur_Persistence_Lesson.md",
+      "type": "brain"
+    },
+    {
+      "name": "Agent & Skills_Handbook",
+      "fileName": "Agent_Skills_Handbook.md",
+      "type": "brain"
+    },
+    {
+      "name": "cloud & network",
+      "fileName": "cloud_network.md",
+      "type": "brain"
+    },
+    {
+      "name": "coding & tech",
+      "fileName": "coding_tech.md",
+      "type": "brain"
+    },
+    {
+      "name": "investment",
+      "fileName": "investment.md",
+      "type": "brain"
+    },
+    {
+      "name": "NotebookLM & Prompts_Handbook",
+      "fileName": "NotebookLM_Prompts_Handbook.md",
+      "type": "brain"
+    },
+    {
+      "name": "self & growth",
+      "fileName": "self_growth.md",
+      "type": "brain"
+    },
+    {
+      "name": "測試文件",
+      "fileName": "測試文件.md",
+      "type": "brain"
+    }
+  ]
+}
