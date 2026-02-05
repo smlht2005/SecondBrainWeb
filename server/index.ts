@@ -23,12 +23,16 @@ if (process.env.NODE_ENV !== 'production') {
 const corsOptions = {
     origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
         // 允許沒有 origin 的請求 (如 curl, postman 或同源請求)
-        if (!origin) return callback(null, true);
+        if (!origin) {
+            console.log('[CORS] Request without origin header (same-origin or direct request)');
+            return callback(null, true);
+        }
+        console.log(`[CORS] Request from origin: ${origin}`);
         if (allowedOrigins.indexOf(origin) === -1) {
-            // 可選：記錄被阻擋的來源以供分析
-            console.warn(`Blocked CORS request from: ${origin}`);
+            console.warn(`[CORS] Blocked request from: ${origin} (not in allowed list: ${allowedOrigins.join(', ')})`);
             return callback(new Error('CORS policy violation'), false);
         }
+        console.log(`[CORS] Allowed request from: ${origin}`);
         return callback(null, true);
     }
 };
@@ -57,7 +61,11 @@ apiRouter.get('/brain/files', (req, res) => {
     // 強制回傳 JSON Header
     res.setHeader('Content-Type', 'application/json');
     try {
-        if (!fs.existsSync(BRAIN_DIR)) return res.json([]);
+        console.log(`[API] GET /api/brain/files - BRAIN_DIR: ${BRAIN_DIR}`);
+        if (!fs.existsSync(BRAIN_DIR)) {
+            console.log(`[API] BRAIN_DIR does not exist: ${BRAIN_DIR}`);
+            return res.json([]);
+        }
         const files = fs.readdirSync(BRAIN_DIR)
             .filter(file => file.endsWith('.md'))
             .map(file => ({
@@ -65,16 +73,22 @@ apiRouter.get('/brain/files', (req, res) => {
                 fileName: file,
                 type: 'brain'
             }));
+        console.log(`[API] Found ${files.length} brain files`);
         res.json(files);
     } catch (error) {
-        res.status(500).json({ error: '無法讀取知識庫目錄' });
+        console.error('[API] Error reading brain directory:', error);
+        res.status(500).json({ error: '無法讀取知識庫目錄', details: error instanceof Error ? error.message : String(error) });
     }
 });
 
 apiRouter.get('/memory/logs', (req, res) => {
     res.setHeader('Content-Type', 'application/json');
     try {
-        if (!fs.existsSync(MEMORY_DIR)) return res.json([]);
+        console.log(`[API] GET /api/memory/logs - MEMORY_DIR: ${MEMORY_DIR}`);
+        if (!fs.existsSync(MEMORY_DIR)) {
+            console.log(`[API] MEMORY_DIR does not exist: ${MEMORY_DIR}`);
+            return res.json([]);
+        }
         const logs = fs.readdirSync(MEMORY_DIR)
             .filter(file => file.endsWith('.md'))
             .sort().reverse()
@@ -83,9 +97,11 @@ apiRouter.get('/memory/logs', (req, res) => {
                 fileName: file,
                 type: 'memory'
             }));
+        console.log(`[API] Found ${logs.length} memory files`);
         res.json(logs);
     } catch (error) {
-        res.status(500).json({ error: '無法讀取對話紀錄' });
+        console.error('[API] Error reading memory directory:', error);
+        res.status(500).json({ error: '無法讀取對話紀錄', details: error instanceof Error ? error.message : String(error) });
     }
 });
 
@@ -108,6 +124,7 @@ apiRouter.get('/content/:type/:fileName', (req, res) => {
 // [Security] 移除 /debug/paths 路由以防止資訊洩漏
 
 // 掛載 API（套用 CORS 保護）
+// 確保 API 路由在靜態文件之前
 app.use('/api', cors(corsOptions), apiRouter);
 
 // 健康檢查端點
@@ -146,8 +163,10 @@ if (distPath) {
     app.use((req, res, next) => {
         // 排除 API 路由和靜態資源
         if (req.path.startsWith('/api') || req.path.startsWith('/assets/') || req.path.startsWith('/vite.svg')) {
+            console.log(`[Static] Skipping SPA route for: ${req.path}`);
             return next();
         }
+        console.log(`[Static] Serving index.html for: ${req.path}`);
         res.sendFile(path.join(distPath, 'index.html'));
     });
 } else {
