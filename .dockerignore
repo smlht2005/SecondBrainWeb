@@ -1,0 +1,38 @@
+# .dockerignore - 減少映像大小，排除開發測試資料
+# 更新時間：2026-02-05 17:30
+# 更新者：AI Assistant
+# 更新摘要：建立 .dockerignore 排除測試資料和不需要的檔案
+
+# 依賴和建置產物（會重新生成）
+node_modules
+dist
+dist-server
+
+# ⚠️ 開發測試資料（不部署到生產）
+brain/
+memory/
+
+# 版本控制
+.git
+.gitignore
+
+# 環境變數（敏感資訊）
+.env
+.env.development
+.env.local
+.env.production.local
+
+# 日誌
+*.log
+
+# IDE 配置
+.vscode
+.idea
+.cursor
+
+# 其他
+*.md
+!README.md
+
+# 測試和開發工具
+.spec-workflow

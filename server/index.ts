@@ -10,15 +10,18 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const port = process.env.PORT || 3000;
 
-// 安全性設定：限制 CORS 來源
+// JSON 解析中間件
+app.use(express.json());
+
+// CORS 配置（僅應用於 API 路由）
 const allowedOrigins = ['https://clawbrain.zeabur.app'];
 // 本地開發時允許 localhost
 if (process.env.NODE_ENV !== 'production') {
     allowedOrigins.push('http://localhost:5173');
 }
 
-app.use(cors({
-    origin: (origin, callback) => {
+const corsOptions = {
+    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
         // 允許沒有 origin 的請求 (如 curl, postman 或同源請求)
         if (!origin) return callback(null, true);
         if (allowedOrigins.indexOf(origin) === -1) {
@@ -28,9 +31,7 @@ app.use(cors({
         }
         return callback(null, true);
     }
-}));
-
-app.use(express.json());
+};
 
 // 智慧路徑探測
 const getStorageDir = (dirName: string) => {
@@ -106,8 +107,21 @@ apiRouter.get('/content/:type/:fileName', (req, res) => {
 
 // [Security] 移除 /debug/paths 路由以防止資訊洩漏
 
-// 掛載 API
-app.use('/api', apiRouter);
+// 掛載 API（套用 CORS 保護）
+app.use('/api', cors(corsOptions), apiRouter);
+
+// 健康檢查端點
+app.get('/health', (req, res) => {
+    res.json({
+        status: 'healthy',
+        uptime: process.uptime(),
+        timestamp: new Date().toISOString(),
+        storage: {
+            brain: fs.existsSync(BRAIN_DIR),
+            memory: fs.existsSync(MEMORY_DIR)
+        }
+    });
+});
 
 // --- 靜態檔案區 (必須在 API 之後) ---
 
@@ -128,8 +142,12 @@ for (const p of possibleDistPaths) {
 if (distPath) {
     console.log(`Serving static files from: ${distPath}`);
     app.use(express.static(distPath));
-    // 處理 SPA 路由：除了 API 以外的所有請求都導向 index.html
-    app.get('*', (req, res) => {
+    // 處理 SPA 路由：除了 API 和靜態資源以外的所有請求都導向 index.html
+    app.use((req, res, next) => {
+        // 排除 API 路由和靜態資源
+        if (req.path.startsWith('/api') || req.path.startsWith('/assets/') || req.path.startsWith('/vite.svg')) {
+            return next();
+        }
         res.sendFile(path.join(distPath, 'index.html'));
     });
 } else {
