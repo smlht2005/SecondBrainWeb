@@ -1,16 +1,16 @@
-# .dockerignore - 減少映像大小，排除開發測試資料
-# 更新時間：2026-02-05 17:30
+# .dockerignore - 減少映像大小
+# 更新時間：2026-02-05 18:35
 # 更新者：AI Assistant
-# 更新摘要：建立 .dockerignore 排除測試資料和不需要的檔案
+# 更新摘要：更新 .dockerignore，允許驗證資料包含在 Docker 映像中
 
 # 依賴和建置產物（會重新生成）
 node_modules
 dist
 dist-server
 
-# ⚠️ 開發測試資料（不部署到生產）
-brain/
-memory/
+# 驗證資料（會包含在 Docker 映像中）
+# brain/ 和 memory/ 目錄中的驗證資料會被打包到映像
+# 用於 Zeabur 部署後的功能驗證
 
 # 版本控制
 .git

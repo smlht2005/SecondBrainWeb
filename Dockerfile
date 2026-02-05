@@ -1,7 +1,7 @@
 # Dockerfile for Second Brain Web
-# 更新時間：2026-02-05 17:30
+# 更新時間：2026-02-05 18:40
 # 更新者：AI Assistant
-# 更新摘要：建立 Dockerfile 支援容器化部署，排除開發測試資料
+# 更新摘要：更新 Dockerfile 包含驗證資料（brain/ 和 memory/）
 
 FROM node:23-alpine AS builder
 
@@ -12,7 +12,7 @@ COPY package*.json ./
 # 建置階段需要 devDependencies（vite, typescript 等）
 RUN npm ci
 
-# 複製源碼（.dockerignore 會排除 brain/ 和 memory/ 測試資料）
+# 複製源碼（包含驗證資料 brain/ 和 memory/）
 COPY . .
 
 # 建置前後端
@@ -29,8 +29,11 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/dist-server ./dist-server
 COPY --from=builder /app/package*.json ./
 
-# 建立資料目錄（可掛載 Volume）
-# 注意：實際資料由 Zeabur Volume 掛載，此處僅建立空目錄結構
+# 複製驗證資料（用於功能驗證）
+COPY --from=builder /app/brain ./brain
+COPY --from=builder /app/memory ./memory
+
+# 建立資料目錄（可掛載 Volume，用於額外的生產資料）
 RUN mkdir -p /home/node/.openclaw/workspace/brain /home/node/.openclaw/workspace/memory
 
 # 暴露端口

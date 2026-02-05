@@ -22,9 +22,9 @@ dist-ssr
 .env.development.local
 .env.production.local
 
-# ⚠️ 開發測試資料（不提交、不部署）
-brain/
-memory/
+# 驗證資料（用於功能驗證，會提交到 Git）
+# brain/ 和 memory/ 目錄中的 .md 文件會被追蹤
+# 這些資料會包含在 Docker 映像中，用於 Zeabur 部署驗證
 
 # 保留目錄結構
 !brain/.gitkeep

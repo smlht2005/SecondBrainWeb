@@ -121,13 +121,15 @@ npm run dev:all
 > 📋 **最新驗證報告**: [`FINAL_DEPLOYMENT_REPORT.md`](FINAL_DEPLOYMENT_REPORT.md)  
 > ✅ **所有測試通過，已準備好部署到生產環境**
 
-### ⚠️ 重要：開發資料 vs 生產資料
+### ⚠️ 重要：驗證資料說明
 
-**`brain/` 和 `memory/` 目錄中的測試資料僅供本地開發使用，不會部署到生產環境。**
+**`brain/` 和 `memory/` 目錄中的驗證資料會包含在 Git 版本控制和 Docker 部署中。**
 
-- ✅ 開發環境：使用本地 `brain/` 和 `memory/` 目錄進行測試
-- ✅ 生產環境：使用 Zeabur Volume 持久化存儲（`/home/node/.openclaw/workspace/`）
-- ✅ 資料隔離：`.gitignore` 和 `.dockerignore` 已配置排除測試資料
+- ✅ 驗證資料：`brain/測試文件.md` 和 `memory/2026-02-05.md` 用於功能驗證
+- ✅ Git 追蹤：驗證資料會被提交到 GitHub，方便協作和部署
+- ✅ Docker 包含：驗證資料會被打包到 Docker 映像中
+- ✅ Zeabur 部署：部署後可立即看到驗證資料，無需手動上傳
+- ✅ 生產資料：生產環境仍可使用 Zeabur Volume 進行持久化存儲（`/home/node/.openclaw/workspace/`）
 
 ### 📋 部署平台：Zeabur
 
@@ -268,10 +270,10 @@ curl https://your-app.zeabur.app/health
 ### 📊 部署檢查清單
 
 部署前確認：
-- [ ] `.gitignore` 已排除 `brain/` 和 `memory/` 測試資料
-- [ ] `.dockerignore` 已排除 `brain/` 和 `memory/` 測試資料
-- [ ] Zeabur Volume 已配置
-- [ ] 生產資料已準備（獨立於開發測試資料）
+- [x] `.gitignore` 已配置允許 `brain/` 和 `memory/` 驗證資料
+- [x] `.dockerignore` 已配置允許 `brain/` 和 `memory/` 驗證資料
+- [ ] Zeabur Volume 已配置（可選，用於額外的生產資料）
+- [x] 驗證資料已包含在專案中（`brain/測試文件.md` 和 `memory/2026-02-05.md`）
 
 部署後驗證：
 - [ ] 前端頁面正常載入
