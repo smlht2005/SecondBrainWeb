@@ -137,8 +137,10 @@ apiRouter.use((err: any, req: express.Request, res: express.Response, next: expr
 // 確保 API 路由在靜態文件之前
 app.use('/api', cors(corsOptions), apiRouter);
 
-// 健康檢查端點
+// 健康檢查端點（必須在靜態文件服務之前）
 app.get('/health', (req, res) => {
+    console.log(`[Health] GET /health`);
+    res.setHeader('Content-Type', 'application/json');
     res.json({
         status: 'healthy',
         uptime: process.uptime(),
