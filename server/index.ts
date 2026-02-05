@@ -117,8 +117,18 @@ apiRouter.get('/content/:type/:fileName', (req, res) => {
             res.status(404).json({ error: '找不到檔案' });
         }
     } catch (error) {
-        res.status(500).json({ error: '讀取失敗' });
+        console.error('[API] Error reading content file:', error);
+        res.status(500).json({ error: '讀取失敗', details: error instanceof Error ? error.message : String(error) });
     }
+});
+
+// API 路由錯誤處理中間件（確保錯誤也返回 JSON）
+apiRouter.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    console.error('[API] Error in API route:', err);
+    res.status(err.status || 500).json({ 
+        error: err.message || 'Internal server error',
+        path: req.path 
+    });
 });
 
 // [Security] 移除 /debug/paths 路由以防止資訊洩漏
@@ -158,11 +168,22 @@ for (const p of possibleDistPaths) {
 
 if (distPath) {
     console.log(`Serving static files from: ${distPath}`);
+    
+    // 明確排除 API 路由和健康檢查，確保靜態文件服務不會攔截這些請求
+    app.use((req, res, next) => {
+        if (req.path.startsWith('/api') || req.path === '/health') {
+            console.log(`[Static] Skipping static file service for: ${req.path}`);
+            return next(); // 交給 API 路由處理
+        }
+        next();
+    });
+    
     app.use(express.static(distPath));
+    
     // 處理 SPA 路由：除了 API 和靜態資源以外的所有請求都導向 index.html
     app.use((req, res, next) => {
-        // 排除 API 路由和靜態資源
-        if (req.path.startsWith('/api') || req.path.startsWith('/assets/') || req.path.startsWith('/vite.svg')) {
+        // 排除 API 路由、健康檢查和靜態資源
+        if (req.path.startsWith('/api') || req.path === '/health' || req.path.startsWith('/assets/') || req.path.startsWith('/vite.svg')) {
             console.log(`[Static] Skipping SPA route for: ${req.path}`);
             return next();
         }
