@@ -30,10 +30,25 @@ export const useBrainData = () => {
     */
 
     const fetchContent = async (type: 'brain' | 'memory' | 'todo', fileName: string) => {
-        // [Static Mode] 暫時回傳內嵌內容 (TODO: 改為 fetch 實際靜態檔案)
-        // 為了讓您看到內容，這裡先暫時 hardcode 讀取到的檔案內容
-        // 實際生產環境應該 fetch `/${type}/${fileName}`
-        return `# ${fileName}\n\n(內容讀取中...)`; 
+        // [Static Mode] 嘗試抓取真實靜態檔案 (若失敗則回傳 Mock)
+        try {
+            // 注意：API 路由 /api/brain/files 已被移除，這裡直接抓靜態檔案
+            // 檔案路徑規則：
+            // brain -> /brain/xxx.md
+            // memory -> /memory/xxx.md
+            // todo -> /TODOS/xxx.md (注意大小寫)
+            
+            const folder = type === 'todo' ? 'TODOS' : type;
+            const res = await fetch(`/${folder}/${fileName}`);
+            
+            if (res.ok) {
+                return await res.text();
+            }
+        } catch (e) {
+            console.error("Fetch static content error", e);
+        }
+        
+        return `# ${fileName}\n\n(內容讀取失敗，請確認檔案是否存在於靜態目錄)`; 
     };
 
     return { files, logs, loading, fetchContent, refresh: () => {} };
