@@ -1,17 +1,17 @@
 {
   "files": [
     {
-      "name": "20260204 & Security_Audit",
+      "name": "20260204 & Security & Audit",
       "fileName": "20260204_Security_Audit.md",
       "type": "brain"
     },
     {
-      "name": "20260204 & Zeabur_Persistence_Lesson",
+      "name": "20260204 & Zeabur & Persistence & Lesson",
       "fileName": "20260204_Zeabur_Persistence_Lesson.md",
       "type": "brain"
     },
     {
-      "name": "Agent & Skills_Handbook",
+      "name": "Agent & Skills & Handbook",
       "fileName": "Agent_Skills_Handbook.md",
       "type": "brain"
     },
@@ -31,7 +31,7 @@
       "type": "brain"
     },
     {
-      "name": "NotebookLM & Prompts_Handbook",
+      "name": "NotebookLM & Prompts & Handbook",
       "fileName": "NotebookLM_Prompts_Handbook.md",
       "type": "brain"
     },

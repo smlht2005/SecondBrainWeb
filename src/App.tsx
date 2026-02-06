@@ -15,13 +15,12 @@ function App() {
   const [selectedItem, setSelectedItem] = useState<SelectedItem | null>(null);
   const [content, setContent] = useState('');
   
-  const { files, logs, loading, fetchContent } = useBrainData();
+  const { files, logs, todos, loading, fetchContent } = useBrainData();
 
   const handleSelect = async (item: SelectedItem) => {
     setSelectedItem(item);
     setContent('讀取中...');
     if (isMobile) setMobileOpen(false);
-    
     const data = await fetchContent(item.type, item.fileName);
     setContent(data);
   };
@@ -54,11 +53,12 @@ function App() {
               },
             }}
           >
-            <Sidebar 
-                files={files} 
-                logs={logs} 
-                selectedItem={selectedItem} 
-                onSelect={handleSelect} 
+            <Sidebar
+                files={files}
+                logs={logs}
+                todos={todos}
+                selectedItem={selectedItem}
+                onSelect={handleSelect}
             />
           </Drawer>
         </Box>

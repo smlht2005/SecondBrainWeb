@@ -1,4 +1,8 @@
 <!--
+更新時間：2026-02-06 14:52
+更新者：AI Assistant
+更新摘要：更新為靜態檔案架構，新增 todos 支援、環境變數控制、測試框架
+
 更新時間：2026-02-05 17:41
 更新者：AI Assistant
 更新摘要：新增生產環境部署章節，說明測試資料不部署策略
@@ -20,28 +24,43 @@
 
 ## 🛠️ 技術棧
 *   **Frontend**: React 19 + TypeScript
-*   **Backend**: Express.js + Node.js
+*   **Backend**: Express.js + Node.js（靜態檔案服務）
 *   **UI Framework**: Material UI (MUI) v7
 *   **Bundler**: Vite
 *   **Rendering**: react-markdown
+*   **Testing**: Vitest + Testing Library
+*   **Architecture**: 靜態檔案架構（直接存取 manifest.json 和 Markdown 檔案）
 
 ## 📁 專案結構
 
 ```
 SecondBrainWeb/
-├── brain/          # 知識庫 Markdown 文件（.md）
-├── memory/         # 對話記憶日誌 Markdown 文件（.md）
-├── server/         # Express 後端伺服器
-│   └── index.ts    # API 路由與靜態文件服務
-├── src/            # React 前端程式碼
-│   ├── components/ # UI 元件
-│   ├── hooks/      # React Hooks
-│   └── theme/      # MUI 主題設定
-├── dist/           # 前端建置輸出（自動生成）
-└── dist-server/    # 後端編譯輸出（自動生成）
+├── brain/              # 知識庫 Markdown 文件（.md）
+├── memory/             # 對話記憶日誌 Markdown 文件（.md）
+├── todos/              # 待辦清單 Markdown 文件（.md）
+├── scripts/            # 建置腳本
+│   └── generate-manifest.js  # 自動生成 manifest.json
+├── server/             # Express 後端伺服器
+│   └── index.ts        # 靜態檔案服務與 SPA 路由
+├── src/                # React 前端程式碼
+│   ├── components/     # UI 元件
+│   ├── hooks/          # React Hooks
+│   ├── utils/          # 工具函數
+│   └── theme/          # MUI 主題設定
+├── tests/              # 測試檔案
+│   ├── setup.ts        # Vitest 設定
+│   └── utils/          # 單元測試
+├── dist/               # 前端建置輸出（自動生成）
+│   ├── brain/          # 複製的 brain/ 目錄與 manifest.json
+│   ├── memory/         # 複製的 memory/ 目錄與 manifest.json
+│   └── todos/          # 複製的 todos/ 目錄與 manifest.json
+└── dist-server/        # 後端編譯輸出（自動生成）
 ```
 
-**重要**：`brain/` 和 `memory/` 目錄用於存放資料，若不存在會自動返回空陣列。
+**重要**：
+- `brain/`、`memory/`、`todos/` 目錄用於存放資料，建置時會自動生成 `manifest.json`
+- 若資料夾不存在，建置腳本會自動建立並產生空的 manifest
+- 透過環境變數 `DATA_FOLDERS` 可控制要包含哪些資料夾（預設：`brain,memory,todos`）
 
 ## 🚀 快速啟動
 
@@ -50,20 +69,36 @@ SecondBrainWeb/
 npm install
 ```
 
-### 🗂️ 建立資料目錄（首次執行）
+### 🗂️ 建立資料目錄（首次執行，可選）
+
+資料夾會在建置時自動建立，但您也可以手動建立：
+
 ```bash
 # Windows PowerShell
-New-Item -ItemType Directory -Path brain, memory
+New-Item -ItemType Directory -Path brain, memory, todos
 
 # macOS/Linux
-mkdir brain memory
+mkdir -p brain memory todos
 ```
 
 ### 🔨 建置專案
 ```bash
 npm run build
 ```
-此命令會同時建置前端（Vite）和後端（TypeScript）。
+
+此命令會：
+1. 執行 `scripts/generate-manifest.js` - 掃描資料夾並生成 `manifest.json`
+2. 編譯 TypeScript（前端與後端）
+3. 建置前端（Vite）並複製 `brain/`、`memory/`、`todos/` 到 `dist/`
+
+**環境變數控制**：
+```bash
+# 僅包含 brain 和 memory（不包含 todos）
+$env:DATA_FOLDERS="brain,memory"; npm run build  # Windows PowerShell
+DATA_FOLDERS=brain,memory npm run build           # Linux/macOS
+```
+
+詳細說明請參考 [docs/DATA_FOLDERS_ENV.md](docs/DATA_FOLDERS_ENV.md)。
 
 ### 🚀 開發環境啟動
 
@@ -77,16 +112,18 @@ npm run dev
 - 地址：http://localhost:5173
 - 支援熱更新（Hot Module Replacement）
 
-**終端 2 - 後端 API 伺服器**：
+**終端 2 - 後端靜態檔案伺服器**：
 ```bash
 npm run server
 ```
-- 啟動 Express API 伺服器
+- 啟動 Express 靜態檔案伺服器
 - 地址：http://localhost:3000
-- 提供 API 端點：
-  - `GET /api/brain/files` - 取得知識庫文件列表
-  - `GET /api/memory/logs` - 取得對話日誌列表
-  - `GET /api/content/:type/:fileName` - 取得文件內容
+- 提供靜態檔案服務：
+  - `GET /brain/manifest.json` - 知識庫檔案列表
+  - `GET /memory/manifest.json` - 對話日誌列表
+  - `GET /todos/manifest.json` - 待辦清單列表
+  - `GET /{type}/{fileName}` - 直接存取 Markdown 檔案內容
+  - `GET /health` - 健康檢查端點
 
 #### 方法二：單一命令啟動（需安裝 concurrently）
 
@@ -103,33 +140,64 @@ npm run dev:all
 
 ### 🌐 訪問應用
 
-- **前端介面**：http://localhost:5173
-- **API 測試**：http://localhost:3000/api/brain/files
+- **前端介面**：http://localhost:5173（開發模式）或 http://localhost:3000（生產模式）
+- **靜態檔案測試**：http://localhost:3000/brain/manifest.json
+
+### 🧪 執行測試
+
+```bash
+# 執行所有測試
+npm run test
+
+# 監聽模式（開發時使用）
+npm run test:watch
+```
+
+測試計劃與詳細說明請參考 [docs/TEST_PLAN.md](docs/TEST_PLAN.md)。
 
 ## 📝 使用說明
 
-1. 將 Markdown 文件放入對應目錄：
+### 新增內容
+
+1. **將 Markdown 文件放入對應目錄**：
    - `brain/` - 存放知識庫文章（例如：`技術筆記.md`）
    - `memory/` - 存放對話日誌（例如：`2026-02-05.md`）
+   - `todos/` - 存放待辦清單（例如：`我的待辦.md`）
 
-2. 前端會自動讀取並顯示這些文件
+2. **重新建置**：
+   ```bash
+   npm run build
+   ```
+   建置腳本會自動掃描資料夾並更新 `manifest.json`
 
-3. 支援完整 Markdown 語法，包括代碼高亮
+3. **前端自動顯示**：
+   - 側邊欄會顯示「知識分類」（brain）、「待辦」（todos）、「最近對話」（memory）
+   - 點選項目後，主內容區域會顯示對應的 Markdown 內容
+
+4. **支援完整 Markdown 語法**，包括代碼高亮、表格、列表等
+
+### 架構說明
+
+本專案採用**靜態檔案架構**：
+- **建置時**：掃描資料夾生成 `manifest.json`，複製所有 `.md` 檔案到 `dist/`
+- **執行時**：前端直接請求 `/brain/manifest.json`、`/memory/manifest.json`、`/todos/manifest.json` 取得檔案列表
+- **內容載入**：直接請求 `/{type}/{fileName}` 取得 Markdown 內容
+- **優點**：簡單、快速、可靠，無需複雜的 API 邏輯
 
 ## 🚀 生產環境部署
 
 > 📋 **最新驗證報告**: [`FINAL_DEPLOYMENT_REPORT.md`](FINAL_DEPLOYMENT_REPORT.md)  
 > ✅ **所有測試通過，已準備好部署到生產環境**
 
-### ⚠️ 重要：驗證資料說明
+### ⚠️ 重要：資料說明
 
-**`brain/` 和 `memory/` 目錄中的驗證資料會包含在 Git 版本控制和 Zeabur 源代碼部署中。**
+**`brain/`、`memory/`、`todos/` 目錄中的資料會包含在 Git 版本控制和 Zeabur 源代碼部署中。**
 
-- ✅ 驗證資料：`brain/測試文件.md` 和 `memory/2026-02-05.md` 用於功能驗證
-- ✅ Git 追蹤：驗證資料會被提交到 GitHub，方便協作和部署
-- ✅ 源代碼部署：Zeabur 使用源代碼部署，驗證資料自動包含（不使用 Dockerfile）
-- ✅ Zeabur 部署：部署後可立即看到驗證資料，無需手動上傳
-- ✅ 生產資料：生產環境仍可使用 Zeabur Volume 進行額外的資料持久化存儲（`/home/node/.openclaw/workspace/`）
+- ✅ 驗證資料：`brain/測試文件.md`、`memory/2026-02-05.md`、`todos/測試待辦.md` 用於功能驗證
+- ✅ Git 追蹤：資料會被提交到 GitHub，方便協作和部署
+- ✅ 源代碼部署：Zeabur 使用源代碼部署，資料自動包含（不使用 Dockerfile）
+- ✅ Zeabur 部署：部署後可立即看到資料，無需手動上傳
+- ✅ 環境變數：可透過 `DATA_FOLDERS` 控制要包含哪些資料夾（預設：`brain,memory,todos`）
 
 ### 📋 部署平台：Zeabur
 
@@ -151,6 +219,7 @@ npm run dev:all
    - 設定環境變數：
      ```
      NODE_ENV=production
+     DATA_FOLDERS=brain,memory,todos  # 可選，預設為 brain,memory,todos
      ```
    - **重要**：配置 Volume
      - Service Settings → Volumes
@@ -163,14 +232,14 @@ npm run dev:all
      - 執行 `npm ci`（安裝所有依賴，包括 devDependencies）
      - 執行 `npm run build`（建置前端和後端）
      - 執行 `npm start`（啟動生產伺服器）
-   - 驗證資料（`brain/` 和 `memory/`）會自動包含在部署中
+   - 資料（`brain/`、`memory/`、`todos/`）會自動包含在部署中
 
 4. **驗證部署**
    - 部署完成後，訪問 Zeabur 提供的 URL
-   - 測試 API 端點，確認返回驗證資料
-   - 前端頁面會自動顯示所有知識庫文件
+   - 測試靜態檔案端點：`/brain/manifest.json`、`/memory/manifest.json`、`/todos/manifest.json`
+   - 前端頁面會自動顯示所有知識庫文件、待辦清單和對話日誌
 
-**注意**：Zeabur 使用源代碼部署（不使用 Dockerfile），所有驗證資料會自動包含。
+**注意**：Zeabur 使用源代碼部署（不使用 Dockerfile），所有資料會自動包含。
 
 ### 🐳 Docker 本地測試（可選）
 
@@ -261,27 +330,33 @@ curl https://your-app.zeabur.app/health
 {
   "status": "healthy",
   "uptime": 123.45,
-  "timestamp": "2026-02-05T17:41:00.000Z",
-  "storage": {
-    "brain": true,
-    "memory": true
-  }
+  "timestamp": "2026-02-06T14:52:00.000Z",
+  "distPath": "/app/dist",
+  "staticFiles": true
 }
 ```
 
 ### 📊 部署檢查清單
 
 部署前確認：
-- [x] `.gitignore` 已配置允許 `brain/` 和 `memory/` 驗證資料
-- [x] `.dockerignore` 已配置允許 `brain/` 和 `memory/` 驗證資料
-- [ ] Zeabur Volume 已配置（可選，用於額外的生產資料）
-- [x] 驗證資料已包含在專案中（`brain/測試文件.md` 和 `memory/2026-02-05.md`）
+- [x] `.gitignore` 已配置允許 `brain/`、`memory/`、`todos/` 資料
+- [x] 驗證資料已包含在專案中（`brain/測試文件.md`、`memory/2026-02-05.md`、`todos/測試待辦.md`）
+- [x] 測試通過（`npm run test`）
+- [ ] 環境變數 `DATA_FOLDERS` 已設定（可選，預設為 `brain,memory,todos`）
 
 部署後驗證：
 - [ ] 前端頁面正常載入
-- [ ] API 端點回應正常（返回 Volume 資料）
-- [ ] 健康檢查端點正常運作
-- [ ] Volume 資料可正常讀寫
+- [ ] 靜態檔案端點正常（`/brain/manifest.json`、`/memory/manifest.json`、`/todos/manifest.json`）
+- [ ] 健康檢查端點正常運作（`/health`）
+- [ ] 側邊欄正確顯示「知識分類」、「待辦」、「最近對話」
+- [ ] 點選項目後內容正確載入
+
+## 📚 相關文件
+
+- [docs/DATA_FOLDERS_ENV.md](docs/DATA_FOLDERS_ENV.md) - 環境變數 `DATA_FOLDERS` 詳細說明
+- [docs/TEST_PLAN.md](docs/TEST_PLAN.md) - 測試計劃與執行方式
+- [docs/ADD_NEW_FOLDER.md](docs/ADD_NEW_FOLDER.md) - **如何新增新的資料夾類型**（例如 notes、projects 等）
+- [dev_readme.md](dev_readme.md) - 開發歷程記錄
 
 ---
 *Developed by Tao 🍵 (AI Assistant)*

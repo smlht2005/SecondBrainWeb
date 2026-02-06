@@ -10,8 +10,14 @@ export interface LogEntry {
     type: 'memory';
 }
 
+export interface TodoEntry {
+    name: string;
+    fileName: string;
+    type: 'todos';
+}
+
 export type SelectedItem = {
     name: string;
     fileName: string;
-    type: 'brain' | 'memory';
+    type: 'brain' | 'memory' | 'todos';
 };

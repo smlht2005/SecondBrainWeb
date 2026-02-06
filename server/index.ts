@@ -47,9 +47,10 @@ if (distPath) {
     // SPA catch-all: 除了靜態資源以外的所有請求都導向 index.html
     app.use((req, res, next) => {
         // 排除靜態資源路徑
-        if (req.path.startsWith('/assets/') || 
-            req.path.startsWith('/brain/') || 
+        if (req.path.startsWith('/assets/') ||
+            req.path.startsWith('/brain/') ||
             req.path.startsWith('/memory/') ||
+            req.path.startsWith('/todos/') ||
             req.path.startsWith('/vite.svg')) {
             return next(); // 讓 express.static 處理
         }
