@@ -10,18 +10,33 @@ import { apiClient, Note } from '../api/client';
 
 export const useBrainData = () => {
     const [notes, setNotes] = useState<Note[]>([]);
+    const [folders, setFolders] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
 
     const fetchData = async () => {
         setLoading(true);
         try {
-            const data = await apiClient.getNotes();
-            setNotes(data);
+            const [notesData, foldersData] = await Promise.all([
+                apiClient.getNotes(),
+                apiClient.getFolders()
+            ]);
+            setNotes(notesData);
+            setFolders(foldersData);
         } catch (e) {
-            console.error('[API] Fetch notes error', e);
-            setNotes([]);
+            console.error('[API] Fetch error', e);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const addFolder = async (name: string) => {
+        try {
+            await apiClient.addFolder(name);
+            await fetchData();
+            return true;
+        } catch (e) {
+            console.error('[API] Add folder error', e);
+            return false;
         }
     };
 
@@ -63,9 +78,11 @@ export const useBrainData = () => {
         todos, 
         review, 
         done, 
+        allFolders: folders,
         loading, 
         fetchContent, 
         moveNote, 
+        addFolder,
         refresh: fetchData 
     };
 };

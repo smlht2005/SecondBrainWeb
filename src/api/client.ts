@@ -22,6 +22,22 @@ export const apiClient = {
     return res.json();
   },
 
+  async getFolders(): Promise<string[]> {
+    const res = await fetch(`${API_BASE_URL}/folders`);
+    if (!res.ok) throw new Error('Failed to fetch folders');
+    return res.json();
+  },
+
+  async addFolder(name: string): Promise<string[]> {
+    const res = await fetch(`${API_BASE_URL}/folders`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name })
+    });
+    if (!res.ok) throw new Error('Failed to add folder');
+    return res.json();
+  },
+
   async moveNote(id: string, targetFolder: string): Promise<Note> {
     const res = await fetch(`${API_BASE_URL}/notes/move`, {
       method: 'POST',

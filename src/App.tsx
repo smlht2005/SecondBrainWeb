@@ -15,7 +15,7 @@ function App() {
   const [selectedItem, setSelectedItem] = useState<{ name: string, fileName: string, type: string } | null>(null);
   const [content, setContent] = useState('');
   
-  const { files, logs, todos, review, done, loading, fetchContent, moveNote } = useBrainData();
+  const { files, logs, todos, review, done, allFolders, loading, fetchContent, moveNote, addFolder } = useBrainData();
 
   const handleSelect = async (item: { name: string, fileName: string, type: string }) => {
     setSelectedItem(item);
@@ -69,8 +69,10 @@ function App() {
                 todos={todos}
                 review={review}
                 done={done}
+                allFolders={allFolders}
                 selectedItem={selectedItem}
                 onSelect={handleSelect}
+                onAddFolder={addFolder}
             />
           </Drawer>
         </Box>
