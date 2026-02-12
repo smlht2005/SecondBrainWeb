@@ -11,8 +11,18 @@
       "type": "brain"
     },
     {
+      "name": "20260205 & Scrum & Log",
+      "fileName": "20260205_Scrum_Log.md",
+      "type": "brain"
+    },
+    {
       "name": "Agent & Skills & Handbook",
       "fileName": "Agent_Skills_Handbook.md",
+      "type": "brain"
+    },
+    {
+      "name": "NotebookLM & Prompts & Handbook",
+      "fileName": "NotebookLM_Prompts_Handbook.md",
       "type": "brain"
     },
     {
@@ -28,11 +38,6 @@
     {
       "name": "investment",
       "fileName": "investment.md",
-      "type": "brain"
-    },
-    {
-      "name": "NotebookLM & Prompts & Handbook",
-      "fileName": "NotebookLM_Prompts_Handbook.md",
       "type": "brain"
     },
     {
