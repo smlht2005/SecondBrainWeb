@@ -6,54 +6,43 @@
  */
 
 import { useState, useEffect } from 'react';
-import type { BrainFile, LogEntry, TodoEntry } from '../types';
-import { parseDataFolders } from '../utils/dataFolders';
-
-const DEFAULT_DATA_FOLDERS = 'brain,memory,todos';
-
-function getDataFolders(): string[] {
-    const raw = (import.meta as unknown as { env: { VITE_DATA_FOLDERS?: string } }).env?.VITE_DATA_FOLDERS ?? DEFAULT_DATA_FOLDERS;
-    return parseDataFolders(raw);
-}
+import { apiClient, Note } from '../api/client';
 
 export const useBrainData = () => {
-    const [files, setFiles] = useState<BrainFile[]>([]);
-    const [logs, setLogs] = useState<LogEntry[]>([]);
-    const [todos, setTodos] = useState<TodoEntry[]>([]);
+    const [notes, setNotes] = useState<Note[]>([]);
     const [loading, setLoading] = useState(true);
 
     const fetchData = async () => {
-        const folders = getDataFolders();
+        setLoading(true);
         try {
-            const results = await Promise.all(
-                folders.map(async (folder) => {
-                    const res = await fetch(`/${folder}/manifest.json`);
-                    if (!res.ok) return { folder, files: [] };
-                    const data = await res.json();
-                    return { folder, files: data.files ?? [] };
-                })
-            );
-            setFiles(results.find(r => r.folder === 'brain')?.files ?? []);
-            setLogs(results.find(r => r.folder === 'memory')?.files ?? []);
-            setTodos(results.find(r => r.folder === 'todos')?.files ?? []);
+            const data = await apiClient.getNotes();
+            setNotes(data);
         } catch (e) {
-            console.error('[Static] Fetch manifest error', e);
-            setFiles([]);
-            setLogs([]);
-            setTodos([]);
+            console.error('[API] Fetch notes error', e);
+            setNotes([]);
         } finally {
             setLoading(false);
         }
     };
 
-    const fetchContent = async (type: 'brain' | 'memory' | 'todos', fileName: string) => {
+    const fetchContent = async (category: string, fileName: string) => {
         try {
-            const res = await fetch(`/${type}/${fileName}`);
-            if (!res.ok) return '讀取內容失敗';
-            return await res.text();
+            const note = await apiClient.getNoteContent(category, fileName);
+            return note.content;
         } catch (e) {
-            console.error('[Static] Fetch content error', e);
+            console.error('[API] Fetch content error', e);
             return '讀取內容失敗';
+        }
+    };
+
+    const moveNote = async (id: string, targetFolder: string) => {
+        try {
+            await apiClient.moveNote(id, targetFolder);
+            await fetchData(); // 移動後重新整理列表
+            return true;
+        } catch (e) {
+            console.error('[API] Move note error', e);
+            return false;
         }
     };
 
@@ -61,5 +50,22 @@ export const useBrainData = () => {
         fetchData();
     }, []);
 
-    return { files, logs, todos, loading, fetchContent, refresh: fetchData };
+    // 為了相容現有的 Component，我們過濾出不同類別的資料
+    const files = notes.filter(n => n.category === 'brain');
+    const logs = notes.filter(n => n.category === 'memory');
+    const todos = notes.filter(n => n.category === 'todos');
+    const review = notes.filter(n => n.category === 'review');
+    const done = notes.filter(n => n.category === 'done');
+
+    return { 
+        files, 
+        logs, 
+        todos, 
+        review, 
+        done, 
+        loading, 
+        fetchContent, 
+        moveNote, 
+        refresh: fetchData 
+    };
 };
