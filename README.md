@@ -28,8 +28,8 @@
 ├── brain/                  # 知識庫文章 (.md)
 ├── memory/                 # 對話日誌 (.md)
 ├── todos/                  # 待辦項目 (.md)
-├── review/                 # 審核中項目 (.md)
-└── done/                   # 已完成項目 (.md)
+├── review/                 # 審核中項目 (.md) - 需手動建立資料夾，建議加入 .gitkeep 或 manifest.json（結構同 todos）
+└── done/                   # 已完成項目 (.md) - 需手動建立資料夾，建議加入 .gitkeep 或 manifest.json（結構同 todos）
 ```
 
 ## 🚀 快速啟動
