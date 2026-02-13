@@ -13,12 +13,26 @@ export const apiClient = {
   async getNotes(): Promise<Note[]> {
     // 靜態檔案架構：請求各目錄的 manifest.json 並彙整
     const folders = ['brain', 'memory', 'todos'];
+    
+    // 如果環境變數有定義 API URL，則優先使用 (可能是 Fastify 後端)
+    if (API_BASE_URL && API_BASE_URL.includes('/api')) {
+      try {
+        const res = await fetch(`${API_BASE_URL}/notes`);
+        if (res.ok) return await res.json();
+      } catch (e) {
+        console.warn('[API] Fastify call failed, falling back to static manifests', e);
+      }
+    }
 
     try {
       const results = await Promise.all(folders.map(async (folder) => {
         try {
-          const res = await fetch(`${API_BASE_URL}/${folder}/manifest.json`);
-          if (!res.ok) return [];
+          // 使用絕對路徑確保在不同路由下都能抓到 manifest
+          const res = await fetch(`/${folder}/manifest.json`);
+          if (!res.ok) {
+              console.warn(`[API] Manifest not found for ${folder}: ${res.status}`);
+              return [];
+          }
           const data = await res.json();
           return (data.files || []).map((f: any) => ({
             id: `${f.type}/${f.fileName}`,
@@ -29,7 +43,7 @@ export const apiClient = {
             category: f.type
           }));
         } catch (e) {
-          console.warn(`[API] Failed to fetch manifest for ${folder}`, e);
+          console.warn(`[API] Failed to parse JSON for ${folder}`, e);
           return [];
         }
       }));

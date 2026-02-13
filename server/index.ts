@@ -44,15 +44,65 @@ if (distPath) {
         fallthrough: true // 如果檔案不存在，繼續到下一個中間件
     }));
     
-    // SPA catch-all: 除了靜態資源以外的所有請求都導向 index.html
+    // ============================================================
+    // API 路由 (相容 Fastify V2 結構)
+    // ============================================================
+    app.get('/api/notes', (req, res) => {
+        const folders = ['brain', 'memory', 'todos'];
+        const allNotes: any[] = [];
+        
+        try {
+            folders.forEach(folder => {
+                const dirPath = path.join(distPath, folder);
+                if (fs.existsSync(dirPath)) {
+                    const files = fs.readdirSync(dirPath).filter(f => f.endsWith('.md'));
+                    files.forEach(file => {
+                        allNotes.push({
+                            id: `${folder}/${file}`,
+                            title: file.replace('.md', '').replace(/_/g, ' '),
+                            category: folder,
+                            updatedAt: fs.statSync(path.join(dirPath, file)).mtime.toISOString()
+                        });
+                    });
+                }
+            });
+            res.json(allNotes);
+        } catch (e: any) {
+            res.status(500).json({ error: e.message });
+        }
+    });
+
+    app.get('/api/notes/:folder/:file', (req, res) => {
+        const { folder, file } = req.params;
+        const filePath = path.join(distPath, folder, file);
+        
+        if (fs.existsSync(filePath)) {
+            const content = fs.readFileSync(filePath, 'utf-8');
+            res.json({
+                id: `${folder}/${file}`,
+                title: file,
+                content: content,
+                category: folder
+            });
+        } else {
+            res.status(404).json({ error: 'File not found' });
+        }
+    });
+
+    app.get('/api/folders', (req, res) => {
+        res.json(['brain', 'memory', 'todos']);
+    });
+
+    // SPA catch-all: 除了靜態資源與 API 以外的所有請求都導向 index.html
     app.use((req, res, next) => {
-        // 排除靜態資源路徑
+        // 排除靜態資源路徑與 API 路徑
         if (req.path.startsWith('/assets/') ||
+            req.path.startsWith('/api/') ||
             req.path.startsWith('/brain/') ||
             req.path.startsWith('/memory/') ||
             req.path.startsWith('/todos/') ||
             req.path.startsWith('/vite.svg')) {
-            return next(); // 讓 express.static 處理
+            return next(); // 讓 express.static 或 API 路由處理
         }
         
         // 其他所有路徑都返回 index.html（SPA 路由）
