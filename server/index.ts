@@ -40,8 +40,13 @@ if (distPath) {
     
     // 服務靜態檔案（包括 brain/, memory/, assets/, index.html）
     app.use(express.static(distPath, {
-        index: false, // 不自動返回 index.html
-        fallthrough: true // 如果檔案不存在，繼續到下一個中間件
+        index: false,
+        fallthrough: true,
+        setHeaders: (res, path) => {
+            if (path.endsWith('.md') || path.endsWith('.json')) {
+                res.setHeader('Content-Type', res.getHeader('Content-Type') + '; charset=utf-8');
+            }
+        }
     }));
     
     // ============================================================
@@ -66,6 +71,7 @@ if (distPath) {
                     });
                 }
             });
+            res.setHeader('Content-Type', 'application/json; charset=utf-8');
             res.json(allNotes);
         } catch (e: any) {
             res.status(500).json({ error: e.message });
@@ -78,6 +84,7 @@ if (distPath) {
         
         if (fs.existsSync(filePath)) {
             const content = fs.readFileSync(filePath, 'utf-8');
+            res.setHeader('Content-Type', 'application/json; charset=utf-8');
             res.json({
                 id: `${folder}/${file}`,
                 title: file.replace('.md', '').replace(/_/g, ' '),
