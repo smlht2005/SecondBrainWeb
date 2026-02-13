@@ -6,7 +6,8 @@
  */
 
 import { useState, useEffect } from 'react';
-import { apiClient, Note } from '../api/client';
+import { apiClient } from '../api/client';
+import type { Note } from '../api/client';
 
 export const useBrainData = () => {
     const [notes, setNotes] = useState<Note[]>([]);

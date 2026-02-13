@@ -19,5 +19,5 @@ export interface TodoEntry {
 export type SelectedItem = {
     name: string;
     fileName: string;
-    type: 'brain' | 'memory' | 'todos';
+    type: 'brain' | 'memory' | 'todos' | 'review' | 'done';
 };

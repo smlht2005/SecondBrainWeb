@@ -6,18 +6,19 @@ import { Sidebar } from './components/Sidebar';
 import { MainContent } from './components/MainContent';
 import { useBrainData } from './hooks/useBrainData';
 import { RateReview as ReviewIcon, TaskAlt as DoneIcon, Replay as ResetIcon } from '@mui/icons-material';
+import type { SelectedItem } from './types';
 
 const drawerWidth = 280;
 
 function App() {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<{ name: string, fileName: string, type: string } | null>(null);
+  const [selectedItem, setSelectedItem] = useState<SelectedItem | null>(null);
   const [content, setContent] = useState('');
   
   const { files, logs, todos, review, done, allFolders, loading, fetchContent, moveNote, addFolder } = useBrainData();
 
-  const handleSelect = async (item: { name: string, fileName: string, type: string }) => {
+  const handleSelect = async (item: SelectedItem) => {
     setSelectedItem(item);
     setContent('讀取中...');
     if (isMobile) setMobileOpen(false);

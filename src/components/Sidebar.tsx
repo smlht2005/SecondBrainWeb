@@ -12,7 +12,8 @@ import {
     TaskAlt as DoneIcon,
     Add as AddIcon
 } from '@mui/icons-material';
-import { Note } from '../api/client';
+import type { Note } from '../api/client';
+import type { SelectedItem } from '../types';
 
 interface SidebarProps {
     files: Note[];
@@ -21,12 +22,12 @@ interface SidebarProps {
     review: Note[];
     done: Note[];
     allFolders: string[];
-    selectedItem: { type: string, fileName: string } | null;
-    onSelect: (item: { name: string, fileName: string, type: string }) => void;
+    selectedItem: SelectedItem | null;
+    onSelect: (item: SelectedItem) => void;
     onAddFolder: (name: string) => Promise<boolean>;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ files, logs, todos, review, done, allFolders, selectedItem, onSelect, onAddFolder }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ files, logs, todos, review, done, allFolders: _, selectedItem, onSelect, onAddFolder }) => {
     const [open, setOpen] = React.useState(false);
     const [newFolderName, setNewFolderName] = React.useState('');
 
@@ -48,7 +49,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ files, logs, todos, review, do
         return <FileIcon />;
     };
 
-    const renderList = (items: Note[], type: string, label: string, Icon: any) => {
+    const renderList = (items: Note[], type: SelectedItem['type'], label: string, Icon: any) => {
         return (
             <>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 2, px: 2 }}>
