@@ -3,8 +3,8 @@ name = "secondbrainweb"
 type = "node"
 
 [build]
-command = "node scripts/generate-manifest.js && tsc -b && tsc -p tsconfig.server.json && vite build"
+command = "npm run build"
 
 [run]
-command = "node dist-server/index.js"
+command = "npm start"
 port = 3000

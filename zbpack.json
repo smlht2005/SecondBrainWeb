@@ -1,6 +1,6 @@
 {
-  "build_command": "node scripts/generate-manifest.js && tsc -b && tsc -p tsconfig.server.json && vite build",
-  "start_command": "node dist-server/index.js",
+  "build_command": "npm run build",
+  "start_command": "npm start",
   "environment": {
     "NODE_ENV": "production"
   }
