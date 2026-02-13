@@ -83,16 +83,21 @@ export const apiClient = {
 
   async getFolders(): Promise<string[]> {
     // 靜態模式下回傳預設目錄
-    return ['brain', 'memory', 'todos'];
+    return ['brain', 'memory', 'todos', 'review', 'done'];
   },
 
   async addFolder(_name: string): Promise<string[]> {
     console.warn('[API] addFolder is not supported in static mode');
-    return ['brain', 'memory', 'todos'];
+    return ['brain', 'memory', 'todos', 'review', 'done'];
   },
 
-  async moveNote(_id: string, _targetFolder: string): Promise<Note> {
-    console.warn('[API] moveNote is not supported in static mode');
-    throw new Error('Operation not supported in static mode');
+  async moveNote(id: string, targetFolder: string): Promise<Note> {
+    const res = await fetch(`${API_BASE_URL}/api/notes/move`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, targetFolder })
+    });
+    if (!res.ok) throw new Error('Failed to move note');
+    return res.json();
   }
 };

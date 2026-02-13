@@ -13,8 +13,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
 
-// 由環境變數決定要處理的資料夾，預設 brain,memory,todos
-const DATA_FOLDERS = (process.env.DATA_FOLDERS || 'brain,memory,todos')
+// 由環境變數決定要處理的資料夾，預設 brain,memory,todos,review,done
+const DATA_FOLDERS = (process.env.DATA_FOLDERS || 'brain,memory,todos,review,done')
     .split(',')
     .map(s => s.trim())
     .filter(Boolean);

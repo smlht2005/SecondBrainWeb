@@ -16,6 +16,8 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const port = process.env.PORT || 3000;
 
+app.use(express.json());
+
 // ============================================================
 // 靜態檔案服務
 // ============================================================
@@ -53,7 +55,7 @@ if (distPath) {
     // API 路由 (相容 Fastify V2 結構)
     // ============================================================
     app.get('/api/notes', (req, res) => {
-        const folders = ['brain', 'memory', 'todos'];
+        const folders = ['brain', 'memory', 'todos', 'review', 'done'];
         const allNotes: any[] = [];
         
         try {
@@ -73,6 +75,36 @@ if (distPath) {
             });
             res.setHeader('Content-Type', 'application/json; charset=utf-8');
             res.json(allNotes);
+        } catch (e: any) {
+            res.status(500).json({ error: e.message });
+        }
+    });
+
+    app.post('/api/notes/move', (req, res) => {
+        const { id, targetFolder } = req.body;
+        if (!id || !targetFolder) return res.status(400).json({ error: 'Missing id or targetFolder' });
+        
+        const [sourceFolder, fileName] = id.split('/');
+        const sourcePath = path.join(distPath, sourceFolder, fileName);
+        const targetPath = path.join(distPath, targetFolder, fileName);
+        
+        try {
+            if (!fs.existsSync(sourcePath)) {
+                // Fallback to project root if not in dist
+                const fallbackSource = path.join(process.cwd(), sourceFolder, fileName);
+                const fallbackTarget = path.join(process.cwd(), targetFolder, fileName);
+                if (fs.existsSync(fallbackSource)) {
+                    if (!fs.existsSync(path.dirname(fallbackTarget))) fs.mkdirSync(path.dirname(fallbackTarget), { recursive: true });
+                    fs.renameSync(fallbackSource, fallbackTarget);
+                    return res.json({ id: `${targetFolder}/${fileName}`, category: targetFolder });
+                }
+                throw new Error(`Source file not found: ${id}`);
+            }
+
+            if (!fs.existsSync(path.dirname(targetPath))) fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+            fs.renameSync(sourcePath, targetPath);
+            
+            res.json({ id: `${targetFolder}/${fileName}`, category: targetFolder });
         } catch (e: any) {
             res.status(500).json({ error: e.message });
         }

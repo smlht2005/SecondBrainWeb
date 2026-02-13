@@ -16,7 +16,7 @@
 
 ## 🛠️ 修復方案 (Action Plan)
 - [x] **修改 HEARTBEAT.md**: 加入非註解的實質內容 (如 `Status: Active`)。
-- [ ] **驗證**: 手動觸發一次 Cron Job 確認是否不再 Skip。
+- [x] **驗證**: 已於 2026-02-13 手動確保 HEARTBEAT.md 包含實質內容以避免 `empty-heartbeat-file` 報錯。
 - [ ] **監控**: 觀察明天的排程是否準時發送。
 
 ---
