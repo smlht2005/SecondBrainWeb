@@ -14,7 +14,8 @@ interface MainContentProps {
 export const MainContent: React.FC<MainContentProps> = ({ selectedItem, content }) => {
     const handleDownload = () => {
         if (!selectedItem || !content) return;
-        const blob = new Blob([content], { type: 'text/markdown' });
+        // 加入 UTF-8 BOM (\uFEFF) 確保 Windows 記事本等軟體能正確識別中文編碼
+        const blob = new Blob(['\uFEFF', content], { type: 'text/markdown;charset=utf-8' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
