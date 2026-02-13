@@ -56,7 +56,19 @@ export const apiClient = {
   },
 
   async getNoteContent(folder: string, file: string): Promise<Note> {
-    const res = await fetch(`${API_BASE_URL}/${folder}/${file}`);
+    // 優先使用 API 獲取內容，避免 SPA fallback 拿到 HTML
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/notes/${folder}/${file}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.content) return data;
+      }
+    } catch (e) {
+      console.warn('[API] Fastify content call failed, falling back to static fetch', e);
+    }
+
+    // Fallback: 直接抓取靜態檔案 (如果 API 不通)
+    const res = await fetch(`/${folder}/${file}`);
     if (!res.ok) throw new Error('Failed to fetch note content');
     const content = await res.text();
     return {

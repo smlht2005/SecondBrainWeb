@@ -80,11 +80,22 @@ if (distPath) {
             const content = fs.readFileSync(filePath, 'utf-8');
             res.json({
                 id: `${folder}/${file}`,
-                title: file,
+                title: file.replace('.md', '').replace(/_/g, ' '),
                 content: content,
                 category: folder
             });
         } else {
+            // 嘗試從當前工作目錄找 (開發環境或結構偏移)
+            const fallbackPath = path.join(process.cwd(), folder, file);
+            if (fs.existsSync(fallbackPath)) {
+                const content = fs.readFileSync(fallbackPath, 'utf-8');
+                return res.json({
+                    id: `${folder}/${file}`,
+                    title: file.replace('.md', '').replace(/_/g, ' '),
+                    content: content,
+                    category: folder
+                });
+            }
             res.status(404).json({ error: 'File not found' });
         }
     });
