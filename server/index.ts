@@ -82,30 +82,41 @@ if (distPath) {
 
     app.post('/api/notes/move', (req, res) => {
         const { id, targetFolder } = req.body;
-        if (!id || !targetFolder) return res.status(400).json({ error: 'Missing id or targetFolder' });
+        console.log(`[API] Move request: id=${id}, targetFolder=${targetFolder}`);
+        if (!id || !targetFolder) {
+            console.error('[API] Move failed: Missing params');
+            return res.status(400).json({ error: 'Missing id or targetFolder' });
+        }
         
         const [sourceFolder, fileName] = id.split('/');
         const sourcePath = path.join(distPath, sourceFolder, fileName);
         const targetPath = path.join(distPath, targetFolder, fileName);
         
+        console.log(`[API] Attempting move: ${sourcePath} -> ${targetPath}`);
+        
         try {
             if (!fs.existsSync(sourcePath)) {
-                // Fallback to project root if not in dist
+                console.warn(`[API] Source not found in dist, checking process.cwd()...`);
                 const fallbackSource = path.join(process.cwd(), sourceFolder, fileName);
                 const fallbackTarget = path.join(process.cwd(), targetFolder, fileName);
+                console.log(`[API] Fallback move: ${fallbackSource} -> ${fallbackTarget}`);
+                
                 if (fs.existsSync(fallbackSource)) {
                     if (!fs.existsSync(path.dirname(fallbackTarget))) fs.mkdirSync(path.dirname(fallbackTarget), { recursive: true });
                     fs.renameSync(fallbackSource, fallbackTarget);
+                    console.log(`[API] Fallback move successful`);
                     return res.json({ id: `${targetFolder}/${fileName}`, category: targetFolder });
                 }
+                console.error(`[API] Source file not found anywhere: ${id}`);
                 throw new Error(`Source file not found: ${id}`);
             }
 
             if (!fs.existsSync(path.dirname(targetPath))) fs.mkdirSync(path.dirname(targetPath), { recursive: true });
             fs.renameSync(sourcePath, targetPath);
-            
+            console.log(`[API] Move successful`);
             res.json({ id: `${targetFolder}/${fileName}`, category: targetFolder });
         } catch (e: any) {
+            console.error(`[API] Move error: ${e.message}`);
             res.status(500).json({ error: e.message });
         }
     });
