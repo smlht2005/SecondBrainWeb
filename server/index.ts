@@ -62,19 +62,35 @@ if (distPath) {
         
         try {
             folders.forEach(folder => {
-                const dirPath = path.join(distPath, folder);
+                // 優先從工作目錄讀取最新檔案 (Volume)，其次是 dist
+                const dirPath = fs.existsSync(path.join(process.cwd(), folder)) 
+                    ? path.join(process.cwd(), folder) 
+                    : path.join(distPath, folder);
+
                 if (fs.existsSync(dirPath)) {
                     const files = fs.readdirSync(dirPath).filter(f => f.endsWith('.md'));
                     files.forEach(file => {
+                        const stats = fs.statSync(path.join(dirPath, file));
                         allNotes.push({
                             id: `${folder}/${file}`,
-                            title: file.replace('.md', '').replace(/_/g, ' '),
+                            title: folder === 'memory' 
+                                ? file.replace('.md', '') 
+                                : file.replace('.md', '').replace(/_/g, ' '),
                             category: folder,
-                            updatedAt: fs.statSync(path.join(dirPath, file)).mtime.toISOString()
+                            updatedAt: stats.mtime.toISOString()
                         });
                     });
                 }
             });
+            
+            // 排序：memory 類別按日期降序，其他按標題
+            allNotes.sort((a, b) => {
+                if (a.category === 'memory' && b.category === 'memory') {
+                    return b.title.localeCompare(a.title);
+                }
+                return a.title.localeCompare(b.title);
+            });
+
             res.setHeader('Content-Type', 'application/json; charset=utf-8');
             res.json(allNotes);
         } catch (e: any) {
