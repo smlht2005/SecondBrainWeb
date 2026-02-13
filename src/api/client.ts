@@ -91,13 +91,23 @@ export const apiClient = {
     return ['brain', 'memory', 'todos', 'review', 'done'];
   },
 
-  async moveNote(id: string, targetFolder: string): Promise<Note> {
-    const res = await fetch(`${API_BASE_URL}/api/notes/move`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, targetFolder })
-    });
-    if (!res.ok) throw new Error('Failed to move note');
-    return res.json();
+  async moveNote(id: string, targetFolder: string): Promise<any> {
+    try {
+      const url = `${API_BASE_URL}/api/notes/move`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, targetFolder })
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: 'Unknown server error' }));
+        throw new Error(errorData.error || `Server responded with ${res.status}`);
+      }
+      return await res.json();
+    } catch (e: any) {
+      console.error('[API] moveNote error:', e);
+      throw e; // 拋出錯誤讓 UI 捕捉
+    }
   }
 };

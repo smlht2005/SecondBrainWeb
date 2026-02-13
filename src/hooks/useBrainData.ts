@@ -56,8 +56,9 @@ export const useBrainData = () => {
             await apiClient.moveNote(id, targetFolder);
             await fetchData(); // 移動後重新整理列表
             return true;
-        } catch (e) {
+        } catch (e: any) {
             console.error('[API] Move note error', e);
+            alert(`移動失敗: ${e.message}`);
             return false;
         }
     };

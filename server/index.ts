@@ -83,41 +83,51 @@ if (distPath) {
     app.post('/api/notes/move', (req, res) => {
         const { id, targetFolder } = req.body;
         console.log(`[API] Move request: id=${id}, targetFolder=${targetFolder}`);
+        
         if (!id || !targetFolder) {
-            console.error('[API] Move failed: Missing params');
-            return res.status(400).json({ error: 'Missing id or targetFolder' });
+            return res.status(400).json({ error: '缺少參數 id 或 targetFolder' });
         }
         
-        const [sourceFolder, fileName] = id.split('/');
-        const sourcePath = path.join(distPath, sourceFolder, fileName);
-        const targetPath = path.join(distPath, targetFolder, fileName);
+        const parts = id.split('/');
+        const sourceFolder = parts[0];
+        const fileName = parts.slice(1).join('/'); // 處理檔名中包含斜線的情況
         
-        console.log(`[API] Attempting move: ${sourcePath} -> ${targetPath}`);
+        // 優先檢查當前工作目錄（Zeabur Volume 所在地）
+        const cwdSource = path.join(process.cwd(), sourceFolder, fileName);
+        const cwdTarget = path.join(process.cwd(), targetFolder, fileName);
+        
+        // 其次檢查 dist 目錄
+        const distSource = path.join(distPath, sourceFolder, fileName);
+        const distTarget = path.join(distPath, targetFolder, fileName);
         
         try {
-            if (!fs.existsSync(sourcePath)) {
-                console.warn(`[API] Source not found in dist, checking process.cwd()...`);
-                const fallbackSource = path.join(process.cwd(), sourceFolder, fileName);
-                const fallbackTarget = path.join(process.cwd(), targetFolder, fileName);
-                console.log(`[API] Fallback move: ${fallbackSource} -> ${fallbackTarget}`);
-                
-                if (fs.existsSync(fallbackSource)) {
-                    if (!fs.existsSync(path.dirname(fallbackTarget))) fs.mkdirSync(path.dirname(fallbackTarget), { recursive: true });
-                    fs.renameSync(fallbackSource, fallbackTarget);
-                    console.log(`[API] Fallback move successful`);
-                    return res.json({ id: `${targetFolder}/${fileName}`, category: targetFolder });
-                }
-                console.error(`[API] Source file not found anywhere: ${id}`);
-                throw new Error(`Source file not found: ${id}`);
+            let actualSource = '';
+            let actualTarget = '';
+
+            if (fs.existsSync(cwdSource)) {
+                actualSource = cwdSource;
+                actualTarget = cwdTarget;
+            } else if (fs.existsSync(distSource)) {
+                actualSource = distSource;
+                actualTarget = distTarget;
+            } else {
+                console.error(`[API] 檔案不存在: ${id}`);
+                return res.status(404).json({ error: `找不到來源檔案: ${id}` });
             }
 
-            if (!fs.existsSync(path.dirname(targetPath))) fs.mkdirSync(path.dirname(targetPath), { recursive: true });
-            fs.renameSync(sourcePath, targetPath);
-            console.log(`[API] Move successful`);
+            // 確保目標目錄存在
+            const targetDir = path.dirname(actualTarget);
+            if (!fs.existsSync(targetDir)) {
+                fs.mkdirSync(targetDir, { recursive: true });
+            }
+
+            fs.renameSync(actualSource, actualTarget);
+            console.log(`[API] 移動成功: ${actualSource} -> ${actualTarget}`);
+            
             res.json({ id: `${targetFolder}/${fileName}`, category: targetFolder });
         } catch (e: any) {
-            console.error(`[API] Move error: ${e.message}`);
-            res.status(500).json({ error: e.message });
+            console.error(`[API] 移動發生異常: ${e.message}`);
+            res.status(500).json({ error: `伺服器內部錯誤: ${e.message}` });
         }
     });
 
