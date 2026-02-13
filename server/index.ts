@@ -172,6 +172,8 @@ if (distPath) {
             req.path.startsWith('/brain/') ||
             req.path.startsWith('/memory/') ||
             req.path.startsWith('/todos/') ||
+            req.path.startsWith('/review/') ||
+            req.path.startsWith('/done/') ||
             req.path.startsWith('/vite.svg')) {
             return next(); // 讓 express.static 或 API 路由處理
         }
