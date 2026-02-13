@@ -1,0 +1,10 @@
+[service]
+name = "secondbrainweb"
+type = "node"
+
+[build]
+command = "node scripts/generate-manifest.js && tsc -b && tsc -p tsconfig.server.json && vite build"
+
+[run]
+command = "node dist-server/index.js"
+port = 3000
