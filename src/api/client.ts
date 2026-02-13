@@ -1,4 +1,7 @@
-const API_BASE_URL = (import.meta as any).env.VITE_API_BASE_URL || '';
+let API_BASE_URL = (import.meta as any).env.VITE_API_BASE_URL || '';
+if (API_BASE_URL.endsWith('/api')) {
+  API_BASE_URL = API_BASE_URL.slice(0, -4);
+}
 
 export interface Note {
   id: string;

@@ -163,7 +163,11 @@ if (distPath) {
     });
 
     app.get('/api/folders', (req, res) => {
-        res.json(['brain', 'memory', 'todos']);
+        res.json(['brain', 'memory', 'todos', 'review', 'done']);
+    });
+
+    app.get('/api/ping', (req, res) => {
+        res.json({ message: 'pong', server: 'Express-Node' });
     });
 
     // SPA catch-all: 除了靜態資源與 API 以外的所有請求都導向 index.html
@@ -226,4 +230,10 @@ app.listen(port, () => {
         console.log(`[Server] Memory directory: ${fs.existsSync(memoryPath) ? 'EXISTS' : 'NOT FOUND'}`);
     }
     console.log(`========================================\n`);
+});
+
+// 全域錯誤處理
+app.use((err: any, req: any, res: any, next: any) => {
+    console.error('[Global Error]', err);
+    res.status(500).json({ error: err.message || '伺服器內部錯誤' });
 });
