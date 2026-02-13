@@ -1,7 +1,0 @@
-{
-  "build_command": "npm run build",
-  "start_command": "npm start",
-  "environment": {
-    "NODE_ENV": "production"
-  }
-}

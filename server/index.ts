@@ -218,7 +218,7 @@ app.get('/health', (req, res) => {
 // ============================================================
 // 啟動伺服器
 // ============================================================
-app.listen(port, () => {
+app.listen(Number(port), '0.0.0.0', () => {
     console.log(`\n========================================`);
     console.log(`[Server] Server started on port ${port}`);
     console.log(`[Server] NODE_ENV: ${process.env.NODE_ENV || 'undefined'}`);
