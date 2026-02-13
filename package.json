@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/generate-manifest.js && tsc -b && tsc -p tsconfig.server.json && vite build",
+    "build": "node scripts/generate-manifest.js && tsc -p tsconfig.app.json && tsc -p tsconfig.server.json && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "server": "node dist-server/index.js",
