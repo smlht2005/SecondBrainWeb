@@ -105,7 +105,13 @@ if (distPath) {
                 return a.title.localeCompare(b.title);
             });
 
+            // 禁用快取，確保前端拿到最新的檔案列表
             res.setHeader('Content-Type', 'application/json; charset=utf-8');
+            res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+            res.setHeader('Pragma', 'no-cache');
+            res.setHeader('Expires', '0');
+            
+            console.log(`[API] Scanned notes count: ${allNotes.length}`);
             res.json(allNotes);
         } catch (e: any) {
             res.status(500).json({ error: e.message });
