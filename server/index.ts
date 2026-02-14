@@ -57,11 +57,24 @@ if (distPath) {
     // API 路由 (相容 Fastify V2 結構)
     // ============================================================
     app.get('/api/notes', (req, res) => {
-        const folders = ['brain', 'memory', 'todos', 'review', 'done'];
+        const baseFolders = ['brain', 'memory', 'todos', 'review', 'done'];
+        // 動態掃描 brain 下的子目錄作為額外分類
+        const brainPath = fs.existsSync(path.join(process.cwd(), 'brain')) 
+            ? path.join(process.cwd(), 'brain') 
+            : path.join(distPath, 'brain');
+            
+        let subFolders: string[] = [];
+        if (fs.existsSync(brainPath)) {
+            subFolders = fs.readdirSync(brainPath, { withFileTypes: true })
+                .filter(dirent => dirent.isDirectory())
+                .map(dirent => `brain/${dirent.name}`);
+        }
+
+        const allFolders = [...baseFolders, ...subFolders];
         const allNotes: any[] = [];
         
         try {
-            folders.forEach(folder => {
+            allFolders.forEach(folder => {
                 // 優先從工作目錄讀取最新檔案 (Volume)，其次是 dist
                 const dirPath = fs.existsSync(path.join(process.cwd(), folder)) 
                     ? path.join(process.cwd(), folder) 
@@ -76,7 +89,8 @@ if (distPath) {
                             title: folder === 'memory' 
                                 ? file.replace('.md', '') 
                                 : file.replace('.md', '').replace(/_/g, ' '),
-                            category: folder,
+                            category: folder.startsWith('brain/') ? 'brain' : folder, // 子目錄仍歸類為 brain，或可擴充 category 邏輯
+                            subCategory: folder.startsWith('brain/') ? folder.split('/')[1] : undefined,
                             updatedAt: stats.mtime.toISOString()
                         });
                     });
@@ -202,6 +216,27 @@ if (distPath) {
                 return res.status(404).json({ error: '檔案不存在' });
             }
             res.json({ success: true });
+        } catch (e: any) {
+            res.status(500).json({ error: e.message });
+        }
+    });
+
+    app.post('/api/folders', (req, res) => {
+        const { name } = req.body;
+        if (!name) return res.status(400).json({ error: 'Missing folder name' });
+
+        // 預設建立在 brain 資料夾下
+        const targetPath = path.join(process.cwd(), 'brain', name);
+        
+        try {
+            if (!fs.existsSync(targetPath)) {
+                fs.mkdirSync(targetPath, { recursive: true });
+                fs.writeFileSync(path.join(targetPath, '.gitkeep'), '');
+                console.log(`[API] Created folder: ${targetPath}`);
+                res.json({ success: true, path: `brain/${name}` });
+            } else {
+                res.status(400).json({ error: 'Folder already exists' });
+            }
         } catch (e: any) {
             res.status(500).json({ error: e.message });
         }

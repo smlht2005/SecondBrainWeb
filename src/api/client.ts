@@ -81,8 +81,20 @@ export const apiClient = {
     return ['brain', 'memory', 'todos', 'review', 'done'];
   },
 
-  async addFolder(_name: string): Promise<string[]> {
-    return this.getFolders();
+  async addFolder(name: string): Promise<string[]> {
+    const apiPath = API_BASE_URL ? `${API_BASE_URL}/folders` : '/api/folders';
+    try {
+      const res = await fetch(apiPath, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name })
+      });
+      if (!res.ok) throw new Error('Failed to create folder');
+      return this.getFolders(); // 重新獲取列表
+    } catch (e) {
+      console.error('[API] Add folder failed', e);
+      return this.getFolders();
+    }
   },
 
   async moveNote(id: string, targetFolder: string): Promise<any> {
