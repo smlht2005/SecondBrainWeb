@@ -5,10 +5,40 @@ import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { MainContent } from './components/MainContent';
 import { useBrainData } from './hooks/useBrainData';
-import { RateReview as ReviewIcon, TaskAlt as DoneIcon, Replay as ResetIcon } from '@mui/icons-material';
+import { 
+  TaskAlt as DoneIcon, 
+  DeleteOutline as DeleteIcon,
+  ArrowBack as BackIcon,
+  ArrowForward as ForwardIcon
+} from '@mui/icons-material';
 import type { SelectedItem } from './types';
 
 const drawerWidth = 280;
+
+// 定義工作流配置
+const WORKFLOW_CONFIG: Record<string, { 
+  prev?: SelectedItem['type'], 
+  prevLabel?: string,
+  next?: SelectedItem['type'],
+  nextLabel?: string,
+  showDelete?: boolean
+}> = {
+  'todos': {
+    next: 'review',
+    nextLabel: '送至審核',
+    showDelete: true
+  },
+  'review': {
+    prev: 'todos',
+    prevLabel: '退回待辦',
+    next: 'done',
+    nextLabel: '完成任務'
+  },
+  'done': {
+    prev: 'review',
+    prevLabel: '重啟審核'
+  }
+};
 
 function App() {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -16,7 +46,7 @@ function App() {
   const [selectedItem, setSelectedItem] = useState<SelectedItem | null>(null);
   const [content, setContent] = useState('');
   
-  const { files, logs, todos, review, done, allFolders, loading, fetchContent, moveNote, addFolder } = useBrainData();
+  const { files, logs, todos, review, done, allFolders, loading, fetchContent, moveNote, deleteNote, addFolder } = useBrainData();
 
   const handleSelect = async (item: SelectedItem) => {
     setSelectedItem(item);
@@ -87,52 +117,46 @@ function App() {
               <Box sx={{ position: 'relative', height: '100%' }}>
                 <MainContent selectedItem={selectedItem} content={content} />
                 
-                {/* 工作流操作按鈕 */}
-                {selectedItem && (selectedItem.type === 'todos' || selectedItem.type === 'review' || selectedItem.type === 'done') && (
+                {/* 工作流操作按鈕 (參數化配置) */}
+                {selectedItem && WORKFLOW_CONFIG[selectedItem.type] && (
                   <Box sx={{ position: 'fixed', bottom: 24, right: 24, zIndex: 1000 }}>
                     <Stack direction="row" spacing={2}>
-                      {selectedItem.type === 'todos' && (
-                        <Button 
-                          variant="contained" 
-                          color="primary" 
-                          startIcon={<ReviewIcon />}
-                          onClick={() => handleMove('review')}
-                          sx={{ borderRadius: 4, px: 3, boxShadow: 10 }}
-                        >
-                          送至審核 (Review)
-                        </Button>
-                      )}
-                      {selectedItem.type === 'review' && (
-                        <>
-                          <Button 
-                            variant="outlined" 
-                            color="inherit" 
-                            startIcon={<ResetIcon />}
-                            onClick={() => handleMove('todos')}
-                            sx={{ borderRadius: 4, px: 3, bgcolor: 'background.paper' }}
-                          >
-                            退回待辦
-                          </Button>
-                          <Button 
-                            variant="contained" 
-                            color="success" 
-                            startIcon={<DoneIcon />}
-                            onClick={() => handleMove('done')}
-                            sx={{ borderRadius: 4, px: 3, boxShadow: 10 }}
-                          >
-                            完成任務 (Done)
-                          </Button>
-                        </>
-                      )}
-                      {selectedItem.type === 'done' && (
+                      {/* 刪除按鈕 */}
+                      {WORKFLOW_CONFIG[selectedItem.type].showDelete && (
                         <Button 
                           variant="outlined" 
-                          color="warning" 
-                          startIcon={<ResetIcon />}
-                          onClick={() => handleMove('review')}
+                          color="error" 
+                          startIcon={<DeleteIcon />}
+                          onClick={() => deleteNote(`${selectedItem.type}/${selectedItem.fileName}`)}
                           sx={{ borderRadius: 4, px: 3, bgcolor: 'background.paper' }}
                         >
-                          重啟審核
+                          刪除待辦
+                        </Button>
+                      )}
+
+                      {/* 返回前一步 */}
+                      {WORKFLOW_CONFIG[selectedItem.type].prev && (
+                        <Button 
+                          variant="outlined" 
+                          color="inherit" 
+                          startIcon={<BackIcon />}
+                          onClick={() => handleMove(WORKFLOW_CONFIG[selectedItem.type].prev!)}
+                          sx={{ borderRadius: 4, px: 3, bgcolor: 'background.paper' }}
+                        >
+                          {WORKFLOW_CONFIG[selectedItem.type].prevLabel}
+                        </Button>
+                      )}
+
+                      {/* 前進下一步 */}
+                      {WORKFLOW_CONFIG[selectedItem.type].next && (
+                        <Button 
+                          variant="contained" 
+                          color={selectedItem.type === 'review' ? 'success' : 'primary'} 
+                          startIcon={selectedItem.type === 'review' ? <DoneIcon /> : <ForwardIcon />}
+                          onClick={() => handleMove(WORKFLOW_CONFIG[selectedItem.type].next!)}
+                          sx={{ borderRadius: 4, px: 3, boxShadow: 10 }}
+                        >
+                          {WORKFLOW_CONFIG[selectedItem.type].nextLabel}
                         </Button>
                       )}
                     </Stack>

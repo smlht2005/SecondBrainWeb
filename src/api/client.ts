@@ -98,5 +98,18 @@ export const apiClient = {
       throw new Error(errorData.error || `Server responded with ${res.status}`);
     }
     return await res.json();
+  },
+
+  async deleteNote(folder: string, file: string): Promise<any> {
+    const apiPath = API_BASE_URL ? `${API_BASE_URL}/notes/${folder}/${file}` : `/api/notes/${folder}/${file}`;
+    const res = await fetch(apiPath, {
+      method: 'DELETE'
+    });
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: 'Unknown server error' }));
+      throw new Error(errorData.error || `Server responded with ${res.status}`);
+    }
+    return await res.json();
   }
 };

@@ -186,6 +186,27 @@ if (distPath) {
         res.json({ message: 'pong', server: 'Express-Node' });
     });
 
+    app.delete('/api/notes/:folder/:file', (req, res) => {
+        const { folder, file } = req.params;
+        const filePath = path.join(distPath, folder, file);
+        const cwdPath = path.join(process.cwd(), folder, file);
+
+        try {
+            if (fs.existsSync(cwdPath)) {
+                fs.unlinkSync(cwdPath);
+                console.log(`[API] Deleted from CWD: ${cwdPath}`);
+            } else if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+                console.log(`[API] Deleted from Dist: ${filePath}`);
+            } else {
+                return res.status(404).json({ error: '檔案不存在' });
+            }
+            res.json({ success: true });
+        } catch (e: any) {
+            res.status(500).json({ error: e.message });
+        }
+    });
+
     // SPA catch-all: 除了靜態資源與 API 以外的所有請求都導向 index.html
     app.use((req, res, next) => {
         // 排除靜態資源路徑與 API 路徑

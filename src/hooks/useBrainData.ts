@@ -63,6 +63,18 @@ export const useBrainData = () => {
         }
     };
 
+    const deleteNote = async (id: string) => {
+        if (!window.confirm(`確定要刪除「${id}」嗎？`)) return;
+        const [folder, file] = id.split('/');
+        try {
+            await apiClient.deleteNote(folder, file);
+            await fetchData();
+            alert('刪除成功');
+        } catch (e: any) {
+            alert(`刪除失敗: ${e.message}`);
+        }
+    };
+
     useEffect(() => {
         fetchData();
     }, []);
@@ -84,6 +96,7 @@ export const useBrainData = () => {
         loading, 
         fetchContent, 
         moveNote, 
+        deleteNote,
         addFolder,
         refresh: fetchData 
     };
