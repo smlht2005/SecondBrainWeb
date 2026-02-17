@@ -42,6 +42,11 @@ for (const p of possibleDistPaths) {
 if (distPath) {
     console.log(`[Server] Serving static files from: ${distPath}`);
     
+    // 明確處理根路徑
+    app.get('/', (req, res) => {
+        res.sendFile(path.resolve(distPath, 'index.html'));
+    });
+    
     // 服務靜態檔案（包括 brain/, memory/, assets/, index.html）
     app.use(express.static(distPath, {
         index: false,
@@ -263,7 +268,7 @@ if (distPath) {
         }
         
         // 其他所有路徑都返回 index.html（SPA 路由）
-        const indexPath = path.join(distPath, 'index.html');
+        const indexPath = path.resolve(distPath, 'index.html');
         if (fs.existsSync(indexPath)) {
             res.sendFile(indexPath);
         } else {

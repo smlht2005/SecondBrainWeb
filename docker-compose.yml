@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  secondbrain:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      # 掛載 OpenClaw workspace 作為唯讀或讀寫
+      - ./brain:/app/brain:ro
+      - ./memory:/app/memory:ro
+      - ./todos:/app/todos:ro
+      - ./review:/app/review:ro
+      - ./done:/app/done:ro
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+
+# 如果需要從外部讀取 OpenClaw workspace（使用 absolute path）
+# volumes:
+#   - /home/node/.openclaw/workspace/brain:/app/brain:ro
+#   - /home/node/.openclaw/workspace/memory:/app/memory:ro

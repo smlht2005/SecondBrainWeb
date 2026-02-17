@@ -1,0 +1,18 @@
+# 生產用 Dockerfile - 數據從 Volume 掛載，不打包進映像
+FROM node:20-slim
+WORKDIR /app
+
+# 只複製必要檔案
+COPY package*.json pnpm-lock.yaml* ./
+RUN npm install -g pnpm && pnpm install
+
+# 複製建置產物（但不包括 data folders，它們會從 volume 掛載）
+COPY dist ./dist
+COPY dist-server ./dist-server
+
+# 確保 data 目錄存在（如果 volume 沒掛載）
+RUN mkdir -p brain memory todos review done
+
+EXPOSE 3000
+ENV NODE_ENV=production
+CMD ["node", "dist-server/index.js"]
