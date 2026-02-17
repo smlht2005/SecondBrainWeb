@@ -1,15 +1,14 @@
-# Zeabur 配置 - 源代碼部署（不使用 Dockerfile）
-# 更新時間：2026-02-05
+# Zeabur 配置 - 使用 Dockerfile 部署
+# 更新時間：2026-02-17
 # 更新者：AI Assistant
-# 更新摘要：配置 Zeabur 使用源代碼部署，不使用 Dockerfile
+# 更新摘要：切換到 Dockerfile 部署模式
 
 build:
-  # 安裝所有依賴（包括 devDependencies，因為建置需要 TypeScript 和 Vite）
-  command: npm ci && npm run build
+  # 使用 Dockerfile 進行建置
+  dockerfile: Dockerfile.prod
 
 deploy:
-  # 啟動生產伺服器
-  start_command: npm start
+  # 不需要額外命令，Dockerfile 會處理
+  start_command: (none)
 
-# 注意：Zeabur 會自動檢測 Node.js 版本
-# 如需指定版本，可在 package.json 中添加 engines 欄位
+# 注意：Zeabur 會自動檢測並使用 Dockerfile
